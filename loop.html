@@ -28,7 +28,9 @@
   --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
   --note:ui-serif,"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
   --r-s:5px; --r-m:8px; --r-l:12px;
-  --rail:236px; --drawer:432px;
+  --rail:214px; --drawer:424px;
+  --t-xs:11px; --t-sm:12px; --t-base:13px; --t-md:14px; --t-lg:16px; --t-xl:18px; --t-2xl:24px; --t-3xl:30px;
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:20px; --s-6:24px; --s-8:32px;
 }
 /* Paper — warm daylight, burnt ochre */
 [data-theme="paper"]{
@@ -82,7 +84,7 @@ button{cursor:pointer}
 .capture input{
   width:100%;height:34px;padding:0 12px 0 30px;background:var(--slate-1);
   border:1px solid var(--rule);border-radius:var(--r-s);font-size:13.5px;
-  transition:border-color .15s cubic-bezier(.23,1,.32,1),background .15s;
+  transition:border-color .15s cubic-bezier(.16,1,.3,1),background .15s;
 }
 .capture input::placeholder{color:var(--chalk-4)}
 .capture input:focus{border-color:var(--rule-hard);background:var(--slate-2)}
@@ -180,6 +182,91 @@ button{cursor:pointer}
 .quiet.warm .bar i{background:var(--ochre)} .quiet.warm .d{color:var(--ochre)}
 .quiet.cold .bar i{background:var(--rust)} .quiet.cold .d{color:var(--rust)}
 
+/* stat strip — the one-glance answer */
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-3);padding:var(--s-4) var(--s-6) var(--s-3)}
+.stat{border:1px solid var(--rule);border-radius:10px;padding:var(--s-3) var(--s-4);background:var(--slate-1);
+  text-align:left;transition:border-color .18s cubic-bezier(.16,1,.3,1),background .18s;cursor:pointer}
+.stat:hover{border-color:var(--rule-hard);background:var(--slate-2)}
+.stat:active{transform:scale(.99)}
+.stat b{display:block;font:600 var(--t-2xl)/1 var(--ui);letter-spacing:-.02em;margin-bottom:6px;font-variant-numeric:tabular-nums}
+.stat span{font:500 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--chalk-4)}
+.stat[data-tone="hot"] b{color:var(--ochre)} .stat[data-tone="hot"] span{color:var(--ochre)}
+.stat[data-tone="cold"] b{color:var(--rust)}
+.stat[aria-current="true"]{border-color:var(--rule-hard);background:var(--slate-2)}
+
+/* board — columns instead of one long scroll */
+.board{display:grid;gap:var(--s-3);padding:0 var(--s-6) var(--s-6);align-items:start;min-height:0}
+.board.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.board.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.board.c5{grid-template-columns:repeat(5,minmax(0,1fr))}
+.col{border:1px solid var(--rule);border-radius:10px;background:var(--slate-1);display:flex;flex-direction:column;
+  overflow:hidden;max-height:calc(100vh - 216px);min-height:0}
+.col > header{display:flex;align-items:center;gap:var(--s-2);padding:10px var(--s-3);border-bottom:1px solid var(--rule);
+  background:var(--slate-1);flex:none}
+.col > header b{font:500 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--chalk-3)}
+.col > header .pill{margin-left:auto;font:500 10px/16px var(--mono);min-width:18px;height:16px;padding:0 5px;
+  border-radius:8px;background:var(--slate-3);color:var(--chalk-3);text-align:center}
+.col.urgent > header b{color:var(--ochre)}
+.col.urgent > header .pill{background:var(--ochre-dim);color:var(--ochre)}
+.col .body{overflow-y:auto;flex:1;min-height:0}
+.col .none{padding:var(--s-5) var(--s-3);text-align:center;font:400 var(--t-sm)/1.5 var(--ui);color:var(--chalk-4)}
+
+/* compact row — one line, ~34px */
+.crow{display:grid;grid-template-columns:3px minmax(0,1fr) auto;gap:0 10px;align-items:center;width:100%;
+  padding:8px 10px;text-align:left;border-bottom:1px solid var(--rule-soft);transition:background .12s}
+.crow:last-child{border-bottom:none}
+.crow:hover{background:var(--slate-2)}
+.crow.sel{background:var(--slate-3)}
+.crow .spine{width:3px;height:18px;border-radius:2px}
+.crow .m{min-width:0;display:flex;align-items:baseline;gap:7px}
+.crow h4{font:400 var(--t-base)/1.45 var(--ui);color:var(--chalk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crow.done h4{color:var(--chalk-3);text-decoration:line-through}
+.crow .who{font:400 10.5px/1 var(--mono);color:var(--dusk);flex:none}
+.crow .ref{font:400 10.5px/1 var(--mono);color:var(--chalk-4);flex:none}
+.crow .age{font:500 10.5px/1 var(--mono);color:var(--chalk-4);flex:none;white-space:nowrap}
+.crow .age.hot{color:var(--ochre)} .crow .age.past{color:var(--rust)}
+.colmore{display:block;width:100%;padding:9px;font:500 var(--t-sm)/1 var(--ui);color:var(--chalk-3);
+  border-top:1px solid var(--rule-soft);transition:.12s}
+.colmore:hover{background:var(--slate-2);color:var(--chalk)}
+
+/* search palette */
+.pal{position:fixed;inset:0;z-index:90;display:none;justify-content:center;align-items:flex-start;
+  padding:11vh 16px 16px;background:rgba(5,7,9,.66)}
+.pal.on{display:flex}
+.palbox{width:100%;max-width:660px;background:var(--slate-2);border:1px solid var(--rule-hard);border-radius:12px;
+  box-shadow:var(--lift);overflow:hidden;animation:pop .16s cubic-bezier(.16,1,.3,1);display:flex;flex-direction:column;max-height:74vh}
+.palbox > input{width:100%;height:52px;padding:0 var(--s-4);font:400 var(--t-lg)/52px var(--ui);
+  border-bottom:1px solid var(--rule);background:none;flex:none}
+.palbox > input::placeholder{color:var(--chalk-4)}
+.palres{overflow-y:auto;padding:6px;min-height:0}
+.pres{display:grid;grid-template-columns:3px minmax(0,1fr) auto;gap:0 11px;align-items:center;width:100%;
+  padding:9px 11px;border-radius:6px;text-align:left}
+.pres[aria-selected="true"]{background:var(--slate-3)}
+.pres .spine{width:3px;height:20px;border-radius:2px}
+.pres b{display:block;font:400 var(--t-md)/1.4 var(--ui);color:var(--chalk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pres small{display:block;font:400 var(--t-xs)/1.5 var(--mono);color:var(--chalk-4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.pres mark{background:var(--ochre-dim);color:var(--ochre);border-radius:2px;padding:0 1px}
+.pres .k{font:500 10px/1 var(--mono);color:var(--chalk-4);flex:none}
+.palfoot{display:flex;gap:var(--s-4);padding:9px var(--s-4);border-top:1px solid var(--rule);flex:none;
+  font:400 10.5px/1 var(--mono);color:var(--chalk-4);letter-spacing:.04em}
+.palnone{padding:var(--s-6) var(--s-4);text-align:center}
+.palnone p{font:400 var(--t-md)/1.5 var(--ui);color:var(--chalk-2);margin-bottom:10px}
+.palnone .rowbtns{justify-content:center}
+
+/* first run */
+.blank{max-width:600px;margin:0 auto;padding:8vh var(--s-6) var(--s-6);text-align:center}
+.blank h2{font:600 var(--t-3xl)/1.2 var(--ui);letter-spacing:-.025em;margin-bottom:10px}
+.blank > p{font:400 var(--t-lg)/1.6 var(--ui);color:var(--chalk-3);margin-bottom:var(--s-6)}
+.bigcap{position:relative;margin-bottom:var(--s-4)}
+.bigcap input{width:100%;height:52px;padding:0 var(--s-4) 0 42px;background:var(--slate-1);border:1px solid var(--rule-hard);
+  border-radius:10px;font:400 var(--t-lg)/52px var(--ui)}
+.bigcap input:focus{border-color:var(--ochre)}
+.bigcap .plus{position:absolute;left:16px;top:16px;color:var(--chalk-4);font-size:20px;line-height:20px}
+.blank .hints{display:flex;flex-direction:column;gap:7px;margin:var(--s-6) 0;text-align:left;
+  border:1px solid var(--rule-soft);border-radius:10px;padding:var(--s-4)}
+.blank .hints div{font:400 var(--t-sm)/1.6 var(--mono);color:var(--chalk-3)}
+.blank .hints b{color:var(--ochre);font-weight:500}
+.blank .hints span{color:var(--chalk-4)}
 .empty{padding:60px 26px;text-align:center;color:var(--chalk-4)}
 .empty p{font:italic 400 15px/1.5 var(--note);color:var(--chalk-3);margin-bottom:6px}
 .empty span{font:400 11.5px/1 var(--mono)}
@@ -277,7 +364,7 @@ input[type=date].fld::-webkit-calendar-picker-indicator{filter:invert(.55);curso
 .veil.on{display:flex}
 .sheet{width:100%;max-width:620px;max-height:82vh;background:var(--slate-1);border:1px solid var(--rule-hard);
   border-radius:var(--r-l);box-shadow:var(--lift);display:flex;flex-direction:column;
-  animation:pop .2s cubic-bezier(.23,1,.32,1)}
+  animation:pop .2s cubic-bezier(.16,1,.3,1)}
 @keyframes pop{from{opacity:0;transform:scale(.96) translateY(6px)}}
 .sheet header{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid var(--rule)}
 .sheet header b{font:600 14px/1 var(--ui);flex:1}
@@ -321,7 +408,7 @@ input[type=date].fld::-webkit-calendar-picker-indicator{filter:invert(.55);curso
   border-radius:var(--r-m);font:400 13px/1.6 var(--ui);resize:vertical;color:var(--chalk)}
 .sheet .in textarea:focus{border-color:var(--rule-hard)}
 .menu{position:fixed;z-index:75;left:-9999px;top:0;background:var(--slate-2);border:1px solid var(--rule-hard);border-radius:var(--r-m);
-  padding:5px;min-width:196px;box-shadow:var(--lift);animation:pop .15s cubic-bezier(.23,1,.32,1);transform-origin:top right}
+  padding:5px;min-width:196px;box-shadow:var(--lift);animation:pop .15s cubic-bezier(.16,1,.3,1);transform-origin:top right}
 .menu button{display:block;width:100%;text-align:left;height:31px;padding:0 10px;border-radius:var(--r-s);
   font:400 13px/31px var(--ui);color:var(--chalk-2)}
 .menu button:hover{background:var(--slate-3);color:var(--chalk)}
@@ -342,7 +429,7 @@ input[type=date].fld::-webkit-calendar-picker-indicator{filter:invert(.55);curso
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(10px);z-index:80;
   background:var(--slate-3);border:1px solid var(--rule-hard);border-radius:var(--r-m);
   padding:9px 15px;font:500 12.5px/1 var(--ui);color:var(--chalk);opacity:0;pointer-events:none;
-  transition:opacity .18s,transform .18s cubic-bezier(.23,1,.32,1);box-shadow:var(--lift)}
+  transition:opacity .18s,transform .18s cubic-bezier(.16,1,.3,1);box-shadow:var(--lift)}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
 .banner{display:flex;align-items:center;gap:10px;padding:8px 26px;background:var(--ochre-dim);
@@ -358,7 +445,12 @@ input[type=date].fld::-webkit-calendar-picker-indicator{filter:invert(.55);curso
   .row .rt{gap:9px}
   .quiet{width:40px}
 }
+@media (max-width:1320px){ .board.c4,.board.c5{grid-template-columns:repeat(3,minmax(0,1fr))} }
 @media (max-width:1080px){
+  .board.c3,.board.c4,.board.c5{grid-template-columns:minmax(0,1fr)}
+  .col{max-height:none}
+  .strip{grid-template-columns:repeat(2,1fr);padding:var(--s-3) var(--s-4)}
+  .board{padding:0 var(--s-4) var(--s-4)}
   .split{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
   .split.open{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr)}
   .rail{flex-direction:row;gap:3px;overflow-x:auto;overflow-y:hidden;
@@ -396,6 +488,7 @@ input[type=date].fld::-webkit-calendar-picker-indicator{filter:invert(.55);curso
     </div>
     <button class="chip" id="chipVault" title="Obsidian vault"><span class="led"></span><span id="chipTxt">no vault</span></button>
     <div class="tools">
+      <button class="tbtn" id="btnFind" title="Search (⌘K)">Search</button>
       <button class="tbtn" id="btnAI">AI</button>
       <button class="tbtn" id="btnMore" title="More">&#8943;</button>
     </div>
@@ -408,6 +501,11 @@ input[type=date].fld::-webkit-calendar-picker-indicator{filter:invert(.55);curso
   </div>
 </div>
 <button id="btnDigest" hidden></button><button id="btnVault" hidden></button><button id="btnHelp" hidden></button>
+<div class="pal" id="pal"><div class="palbox">
+  <input id="palIn" placeholder="Search threads, people, notes, log lines…" autocomplete="off" spellcheck="false">
+  <div class="palres" id="palRes"></div>
+  <div class="palfoot"><span>↑↓ move</span><span>↵ open</span><span>esc close</span><span style="margin-left:auto">searches every log line</span></div>
+</div></div>
 <div class="veil" id="veil"><div class="sheet" id="sheet"></div></div>
 <div class="toast" id="toast"></div>
 <script>
@@ -465,91 +563,11 @@ const STATUS={
 };
 const QUIET=21; // days of silence before a thread is flagged
 
-/* ---------- seed: everything from the notes ---------- */
-/* t title · l lane · k kind · s status · w who · r ref · n next(+days) · u days since update · c cadence · g tags · x last log line */
-const SEED=[
- {t:"RITM0042345 — chase the ServiceNow request",l:"work",k:"followup",s:"waiting",r:"RITM0042345",n:-2,u:4,g:["servicenow"],x:"Raised, no movement. Ping the queue owner."},
- {t:"Close the thread with Archit",l:"work",k:"followup",s:"waiting",w:"Archit",n:2,u:3,x:"Waiting on Archit's reply to close this out."},
- {t:"Concur report — publish to Rajesh",l:"work",k:"followup",s:"open",w:"Rajesh",n:-1,u:6},
- {t:"Monthly call with Cyrus",l:"work",k:"followup",s:"ontrack",w:"Cyrus",n:9,u:21,c:30,x:"Standing monthly sync. Last one covered platform spend."},
- {t:"Adithya — push this to PROD deployment",l:"work",k:"followup",s:"waiting",w:"Adithya",n:-4,u:2,x:"Code ready, waiting on deployment slot."},
- {t:"Pulse cutover checklist → Alagar",l:"work",k:"followup",s:"ontrack",w:"Alagar",n:2,u:1,g:["sat-8aug","pulse"],x:"Checklist drafted. Hand over before Saturday cutover."},
- {t:"Hand over Report Studio agent to RMG team",l:"work",k:"followup",s:"open",w:"RMG",n:2,u:5,g:["sat-8aug"]},
- {t:"Week off issue — find the root cause",l:"work",k:"analyse",s:"blocked",n:0,u:8,x:"Reported again this week. Need to reproduce."},
-
- {t:"Pulse Azure migration — completion",l:"work",k:"develop",s:"ontrack",n:2,u:1,g:["pulse","sat-8aug"],x:"BI owners repointing to the data lake before cutover."},
- {t:"Logic Apps move",l:"work",k:"develop",s:"offtrack",u:12,x:"Slipped. Nothing moved this sprint — needs a new date."},
- {t:"Mobile app integration",l:"work",k:"develop",s:"offtrack",u:16,x:"Off track. No owner assigned yet."},
- {t:"Involuntary exits flows",l:"work",k:"develop",s:"ontrack",u:5},
- {t:"On-prem AD",l:"work",k:"develop",s:"ontrack",u:7},
- {t:"CRM agent",l:"work",k:"develop",s:"ontrack",u:4},
- {t:"Comp agent",l:"work",k:"develop",s:"ontrack",u:6},
- {t:"Campaign release",l:"work",k:"develop",s:"ontrack",u:3},
- {t:"Data purging work",l:"work",k:"develop",s:"ontrack",n:2,u:5,g:["sat-8aug"]},
- {t:"Nexi — new joiners flow",l:"work",k:"develop",s:"ontrack",n:2,u:2,g:["sat-8aug"]},
- {t:"Cockpit generation (CEO / CFO)",l:"work",k:"develop",s:"ontrack",u:4,x:"Design review done with Mosesraj."},
- {t:"Attendance — Details Employee Wise PROD",l:"work",k:"develop",s:"open",n:2,u:9,g:["sat-8aug"]},
- {t:"Variable pay",l:"work",k:"develop",s:"open",n:2,u:9,g:["sat-8aug"]},
- {t:"WFO tracking",l:"work",k:"develop",s:"open",n:2,u:9,g:["sat-8aug"]},
- {t:"Attendance module",l:"work",k:"develop",s:"open",n:2,u:9,g:["sat-8aug"]},
- {t:"All apps under WAF",l:"work",k:"roadmap",s:"open",u:14,x:"Every app should sit behind the WAF. Needs an inventory first."},
- {t:"Security architecture and road map",l:"work",k:"roadmap",s:"open",w:"Mosesraj",u:11,x:"Methodology first, tooling later. Pilot the framework in Excel."},
- {t:"IT dashboard — go for the big launch",l:"work",k:"develop",s:"open",u:18},
-
- {t:"Frontier tuning model",l:"map",k:"roadmap",s:"open",w:"Mosesraj",u:6,x:"From Microsoft Cloud & AI Innovation Day. Flag as a 2026–27 roadmap item."},
- {t:"Host one application via Fabric as the backend",l:"map",k:"roadmap",s:"open",u:13},
- {t:"MCP from Fabric",l:"map",k:"roadmap",s:"open",u:13},
- {t:"Semantic models for generating cost queries",l:"map",k:"roadmap",s:"open",u:15},
- {t:"One central solution: observability + App Insights + pipelines + jobs + Azure cost",l:"map",k:"roadmap",s:"open",u:17,x:"Single pane for the whole estate. Azure cost folded in."},
- {t:"OLTP vs OLAP — settle the position",l:"map",k:"analyse",s:"open",u:24},
- {t:"Latency — bring it down",l:"map",k:"analyse",s:"open",u:19},
- {t:"Plan agent in Fabric → build the demo",l:"map",k:"roadmap",s:"open",u:10},
- {t:"Candidate search → Devesh Agarwal (confirm the name)",l:"map",k:"followup",s:"open",u:20},
- {t:"AI deck builder",l:"map",k:"roadmap",s:"open",u:26},
- {t:"Podcast generated from the work-week notes",l:"map",k:"roadmap",s:"open",u:22,x:"Feed the weekly digest into it — the notes already exist."},
- {t:"Credo card mobile apps",l:"map",k:"develop",s:"open",u:29},
-
- {t:"Authorization via Azure AD employee groups",l:"learn",k:"learn",s:"open",u:34},
- {t:"Patterns in hosting infrastructure",l:"learn",k:"learn",s:"open",u:34},
- {t:"How AWS works",l:"learn",k:"learn",s:"open",u:41},
- {t:"Hot partition",l:"learn",k:"learn",s:"open",u:41},
- {t:"Cosmos DB",l:"learn",k:"learn",s:"open",u:47},
-
- {t:"Blog: App Insights — alerts and monitors",l:"write",k:"develop",s:"open",u:28},
- {t:"Blog: add files via API to a Foundry agent, make it dynamic",l:"write",k:"develop",s:"open",u:23,x:"Strongest one of the set — I have working code for this."},
- {t:"Blog: campaign portal — Graph and the benefits",l:"write",k:"develop",s:"open",u:31},
- {t:"Blog: WAF",l:"write",k:"develop",s:"open",u:31},
- {t:"Blog: Front Door",l:"write",k:"develop",s:"open",u:31},
- {t:"Blog: PMS (process)",l:"write",k:"develop",s:"open",u:37},
- {t:"Blog: follow-up framework (process)",l:"write",k:"develop",s:"open",u:37},
- {t:"Blog: vacation view (process)",l:"write",k:"develop",s:"open",u:37},
-
- {t:"Term insurance — medicals, MWP nomination, free-look",l:"self",k:"followup",s:"ontrack",n:4,u:3,x:"Policy bought through Policybazaar. Full disclosure at the medical. MWP has to be elected at issuance."},
- {t:"SIP investment — decide: mutual funds vs SIP",l:"self",k:"analyse",s:"open",u:12,x:"Note to self: invest in mutual funds, not only SIP."},
- {t:"NPS",l:"self",k:"analyse",s:"open",u:25},
- {t:"Credit card points — actually redeem them",l:"self",k:"followup",s:"open",u:33},
- {t:"Zaggle",l:"self",k:"followup",s:"open",u:33},
- {t:"Helena — finance podcast",l:"self",k:"develop",s:"open",u:30}
-];
-
 /* ---------- model ---------- */
 let DB=Store.read();
 function slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60);}
 function uid(){return Math.random().toString(36).slice(2,9);}
-function seed(){
-  const now=Date.now();
-  const threads=SEED.map(s=>{
-    const created=new Date(now-(s.u+9)*DAY).toISOString();
-    const log=[{ts:created,kind:"open",text:"Captured from the running note."}];
-    if(s.x)log.unshift({ts:new Date(now-s.u*DAY).toISOString(),kind:"note",text:s.x});
-    return{
-      id:uid(),title:s.t,lane:s.l,kind:s.k,status:s.s,who:s.w||"",ref:s.r||"",
-      next:(s.n===undefined||s.n===null)?"":shift(s.n),cadence:s.c||0,tags:s.g||[],
-      notes:"",created,updated:new Date(now-s.u*DAY).toISOString(),arch:false,log
-    };
-  });
-  return{v:1,threads,touched:new Date().toISOString()};
-}
+function seed(){return{v:1,threads:[],touched:new Date().toISOString()};}
 if(!DB||!DB.threads){DB=seed();Store.write(DB);}
 let afterSave=null;
 const save=()=>{DB.touched=new Date().toISOString();Store.write(DB);if(afterSave)afterSave();};
@@ -605,7 +623,7 @@ function create(raw){
 }
 
 /* ---------- state ---------- */
-let view={mode:"radar",arg:""},sel=null,sort="quiet",railOpen=false;
+let view={mode:"today",arg:""},sel=null,sort="quiet",railOpen=false;
 try{railOpen=localStorage.getItem("loop.more")==="1";}catch(e){}
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -626,6 +644,11 @@ function closeMenu(){const m=document.getElementById("menu");if(m)m.remove();doc
 function toast(m){const el=$("#toast");el.textContent=m;el.classList.add("on");clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove("on"),2100);}
 
 /* ---------- rail ---------- */
+function creed(){
+  try{const v=localStorage.getItem("loop.creed");if(v!==null)return v||CREED_DEFAULT;}catch(e){}
+  return CREED_DEFAULT;
+}
+const CREED_DEFAULT="\u201cFool with a tool is still a fool.\u201d";
 function renderRail(){
   const live=DB.threads.filter(isLive);
   const nOver=live.filter(overdue).length, nSoon=live.filter(dueSoon).length,
@@ -634,10 +657,10 @@ function renderRail(){
     `<button class="nav${alert&&count?" alert":""}" data-view="${m}" data-arg="${a}" aria-current="${view.mode===m&&view.arg===a}">
       ${dot?`<span class="dot" style="background:${dot}"></span>`:""}<span>${label}</span><span class="n">${count}</span></button>`;
   let h=`<h6>Focus</h6>
-    ${item("radar","","Radar",nOver+nSoon+nQuiet,"",true)}
-    ${item("over","","Overdue",nOver,"",true)}
+    ${item("today","","Today",nOver+nSoon,"",true)}
     ${item("quiet","","Gone quiet",nQuiet,"",true)}
     ${item("people","","With people",nWait,"")}
+    ${item("lanes","","All lanes",live.length,"")}
     <h6>Lanes</h6>`;
   for(const k in LANES)h+=item("lane",k,LANES[k],live.filter(t=>t.lane===k).length,"");
   h+=`<button class="more" id="railMore" aria-expanded="${railOpen}"><i>&#9654;</i>More</button>`;
@@ -651,102 +674,162 @@ function renderRail(){
       ${item("done","","Closed",DB.threads.filter(t=>t.status==="done"&&!t.arch).length,STATUS.done.c)}
       ${item("arch","","Archive",DB.threads.filter(t=>t.arch).length,"")}`;
   }
-  h+=`<div class="creed"><p>“Fool with a tool is still a fool.”</p><span>PINNED · YOUR LINE</span></div>`;
+  h+=`<div class="creed"><p id="creed" contenteditable="plaintext-only" spellcheck="false">${esc(creed())}</p><span>PINNED · CLICK TO CHANGE</span></div>`;
   $("#rail").innerHTML=h;
   $("#rail").querySelectorAll(".nav").forEach(b=>b.onclick=()=>{view={mode:b.dataset.view,arg:b.dataset.arg};render();});
+  $("#creed").onblur=e=>{const v=e.target.textContent.trim();
+    try{localStorage.setItem("loop.creed",v);}catch(err){}
+    if(!v){e.target.textContent=creed();}};
   $("#railMore").onclick=()=>{railOpen=!railOpen;try{localStorage.setItem("loop.more",railOpen?"1":"0");}catch(e){}renderRail();};
 }
 
-/* ---------- row ---------- */
-function rowHTML(t){
-  const q=quietDays(t), pct=Math.min(100,Math.round(q/45*100));
-  const cls=q>=35?"cold":q>=QUIET?"warm":"";
+/* ---------- rows ---------- */
+function ageChip(t){
   const d=dueLabel(t.next);
-  const last=t.log[0]?t.log[0].text.split("\n")[0]:"";
-  const meta=[LANES[t.lane]];
-  return `<button class="row${sel===t.id?" sel":""}${t.status==="done"?" done":""}" data-id="${t.id}">
-    <span class="spine" style="background:${STATUS[t.status].c}"></span>
-    <span class="t">
-      <h3>${esc(t.title)}</h3>
-      <span class="meta">${meta.join(" · ")}
-        ${t.who?`· <span class="who">@${esc(t.who)}</span>`:""}
-        ${t.ref?`· <span class="ref">${esc(t.ref)}</span>`:""}
-        ${t.cadence?`· ~${t.cadence}d`:""}
-        ${last?`· <em>${esc(last.slice(0,80))}</em>`:""}</span>
-    </span>
-    <span class="rt">
-      ${d.txt?`<span class="due ${d.cls}">${d.txt}</span>`:""}
-      <span class="quiet ${cls}" title="${q} days since the last update">
-        <span class="bar"><i style="width:${pct}%"></i></span><span class="d">${q}d</span></span>
-    </span></button>`;
+  if(d.txt)return `<span class="age ${d.cls}">${d.txt}</span>`;
+  const q=quietDays(t);
+  return `<span class="age${q>=35?" past":q>=QUIET?" hot":""}" title="${q} days since the last update">${q}d</span>`;
 }
+function crowHTML(t){
+  return `<button class="crow${sel===t.id?" sel":""}${t.status==="done"?" done":""}" data-id="${t.id}">
+    <span class="spine" style="background:${STATUS[t.status].c}"></span>
+    <span class="m"><h4>${esc(t.title)}</h4>${t.who?`<span class="who">@${esc(t.who)}</span>`:""}${
+      !t.who&&t.ref?`<span class="ref">${esc(t.ref)}</span>`:""}</span>
+    ${ageChip(t)}</button>`;
+}
+function colHTML(title,arr,opts){
+  opts=opts||{};
+  const cap=opts.cap||14,shown=arr.slice(0,cap),rest=arr.length-shown.length;
+  return `<section class="col${opts.urgent?" urgent":""}">
+    <header><b>${title}</b><span class="pill">${arr.length}</span></header>
+    <div class="body">${shown.length?shown.map(crowHTML).join("")
+      :`<p class="none">${opts.empty||"Nothing here."}</p>`}
+      ${rest>0?`<button class="colmore" data-view="${opts.more||"all"}" data-arg="${opts.moreArg||""}">${rest} more →</button>`:""}
+    </div></section>`;
+}
+function rowHTML(t){return crowHTML(t);}
 function listHTML(arr){
   if(!arr.length)return `<div class="empty"><p>Clear here.</p><span>NOTHING WAITING IN THIS VIEW</span></div>`;
-  return `<div class="rows">${arr.map(rowHTML).join("")}</div>`;
+  return `<div class="rows">${arr.map(crowHTML).join("")}</div>`;
 }
 function group(title,arr,urgent){
   if(!arr.length)return "";
   return `<div class="gh${urgent?" urgent":""}"><b>${title}</b><span class="n">${arr.length}</span><span class="line"></span></div>${listHTML(arr)}`;
 }
 const bySort=a=>a.slice().sort((x,y)=>{
-  if(sort==="quiet")return quietDays(y)-quietDays(x);
   if(sort==="due"){const A=x.next||"9999",B=y.next||"9999";return A<B?-1:A>B?1:0;}
-  return new Date(y.updated)-new Date(x.updated);
+  return quietDays(y)-quietDays(x);
 });
+const byDue=a=>a.slice().sort((x,y)=>(x.next||"9999")<(y.next||"9999")?-1:1);
+
+/* ---------- first run ---------- */
+function blankHTML(){
+  return `<div class="blank">
+    <h2>Nothing tracked yet.</h2>
+    <p>Type the first thing you're carrying. One line, then Enter.</p>
+    <div class="bigcap"><span class="plus">+</span>
+      <input id="bigCap" placeholder="chase the WAF inventory @archit !fri" autocomplete="off" spellcheck="false"></div>
+    <div class="rowbtns" style="justify-content:center">
+      <button class="abtn go" id="bPaste">Paste a whole note</button></div>
+    <div class="hints">
+      <div><b>@archit</b> <span>— someone else is holding it</span></div>
+      <div><b>#work #map #learn #write #self</b> <span>— which lane</span></div>
+      <div><b>!fri</b> or <b>!2026-08-20</b> <span>— when to check back</span></div>
+      <div><b>~30d</b> <span>— repeats, and the date rolls forward each update</span></div>
+    </div></div>`;
+}
 
 /* ---------- main ---------- */
 function render(){
   renderRail();
   const live=DB.threads.filter(isLive);
-  const m=view.mode; let head="",body="";
+  if(!DB.threads.length){
+    $("#main").innerHTML=blankHTML();
+    const bc=$("#bigCap");
+    bc.onkeydown=e=>{if(e.key==="Enter"){const t=create(bc.value);if(t){view={mode:"today",arg:""};render();open(t.id);toast("Filed");}}};
+    setTimeout(()=>bc.focus(),80);
+    $("#bPaste").onclick=pasteSheet;
+    return;
+  }
+  const m=view.mode; let head="",body="",strip="";
   const segs=`<div class="seg">
       <button data-sort="quiet" aria-pressed="${sort==="quiet"}">Quietest</button>
       <button data-sort="due" aria-pressed="${sort==="due"}">By date</button></div>`;
 
-  if(m==="radar"){
-    const over=bySort(live.filter(overdue)), soon=bySort(live.filter(dueSoon)),
-          quiet=bySort(live.filter(goneQuiet)), wait=bySort(live.filter(t=>waitingOn(t)&&!overdue(t)&&!dueSoon(t)&&!goneQuiet(t)));
-    const holding=live.filter(waitingOn).length;
-    head=`<h1>Radar</h1><p><span style="color:var(--ochre);font-weight:600">${over.length+soon.length}</span> need you this week ·
-      ${quiet.length} gone quiet · ${holding} sitting with someone else · ${live.length} open in total</p><span class="sp"></span>${segs}`;
-    body=group("Overdue",over,true)+group("Next seven days",soon,true)
-        +group("Gone quiet · "+QUIET+" days or more",quiet)+group("Waiting on someone",wait);
-    if(!body)body=`<div class="empty"><p>Everything is current.</p><span>NOTHING OVERDUE, NOTHING QUIET</span></div>`;
+  if(m==="today"){
+    const over=byDue(live.filter(overdue));
+    const soon=byDue(live.filter(dueSoon));
+    const quiet=bySort(live.filter(goneQuiet));
+    const wait=live.filter(waitingOn);
+    const today=live.filter(t=>t.next&&dayDiff(TODAY(),t.next)===0);
+    strip=`<div class="strip">
+      <button class="stat" data-go="over" data-tone="${over.length?"cold":""}" aria-current="${view.mode==="over"}"><b>${over.length}</b><span>Overdue</span></button>
+      <button class="stat" data-go="due" data-tone="${today.length?"hot":""}"><b>${today.length}</b><span>Due today</span></button>
+      <button class="stat" data-go="quiet"><b>${quiet.length}</b><span>Gone quiet</span></button>
+      <button class="stat" data-go="people"><b>${wait.length}</b><span>With people</span></button></div>`;
+    head=`<h1>Today</h1><p>${WD[midnight().getDay()]} ${shortDate(TODAY())} · ${live.length} open</p>`;
+    body=`<div class="board c3">
+      ${colHTML("Needs you now",over.concat(soon.filter(t=>dayDiff(TODAY(),t.next)<=1)),{urgent:true,more:"over",empty:"Nothing is late."})}
+      ${colHTML("Rest of the week",soon.filter(t=>dayDiff(TODAY(),t.next)>1),{more:"all",empty:"Week is clear."})}
+      ${colHTML("Gone quiet",quiet,{more:"quiet",empty:"Everything is current."})}
+    </div>`;
   }
-  else if(m==="over"||m==="quiet"){
-    const arr=bySort(live.filter(m==="over"?overdue:goneQuiet));
-    head=`<h1>${m==="over"?"Overdue":"Gone quiet"}</h1><p>${m==="over"?"Past the date you set.":"No update in "+QUIET+"+ days. These are the ones that disappear."}</p><span class="sp"></span>${segs}`;
-    body=listHTML(arr);
-  }
-  else if(m==="lane"){
-    const arr=live.filter(t=>t.lane===view.arg);
-    head=`<h1>${LANES[view.arg]}</h1><p>${arr.length} open</p><span class="sp"></span>${segs}`;
-    body=["offtrack","blocked","waiting","ontrack","open"].map(s=>group(STATUS[s].label,bySort(arr.filter(t=>t.status===s)),s==="offtrack"||s==="blocked")).join("");
-  }
-  else if(m==="status"){
-    const arr=bySort(live.filter(t=>t.status===view.arg));
-    head=`<h1>${STATUS[view.arg].label}</h1><p>${arr.length} threads</p><span class="sp"></span>${segs}`;
-    body=listHTML(arr);
-  }
-  else if(m==="all"){
-    head=`<h1>All threads</h1><p>${live.length} open · sorted by silence</p><span class="sp"></span>${segs}`;
-    body=listHTML(bySort(live));
-  }
-  else if(m==="done"||m==="arch"){
-    const arr=DB.threads.filter(t=>m==="done"?(t.status==="done"&&!t.arch):t.arch)
-      .sort((a,b)=>new Date(b.updated)-new Date(a.updated));
-    head=`<h1>${m==="done"?"Closed":"Archive"}</h1><p>${arr.length} threads · the log stays with them</p>`;
-    body=listHTML(arr);
+  else if(m==="lanes"){
+    head=`<h1>All lanes</h1><p>${live.length} open across five lanes</p>`;
+    body=`<div class="board c5">${Object.keys(LANES).map(k=>
+      colHTML(LANES[k],bySort(live.filter(t=>t.lane===k)),{more:"lane",moreArg:k,cap:12,empty:"Empty lane."})).join("")}</div>`;
   }
   else if(m==="people"){
     const map={};
     live.filter(t=>t.who).forEach(t=>(map[t.who]=map[t.who]||[]).push(t));
     const names=Object.keys(map).sort((a,b)=>map[b].length-map[a].length);
-    head=`<h1>People</h1><p>Open this before a 1:1 — everything that person is holding, in one block.</p>`;
-    body=names.length?names.map(n=>`<div class="pcard">
-        <header><span class="av">${esc(n.slice(0,2).toUpperCase())}</span><b>${esc(n)}</b><span class="n">${map[n].length} open</span></header>
-        ${listHTML(bySort(map[n]))}</div>`).join("")
+    head=`<h1>People</h1><p>Open this before a 1:1 — everything that person is holding.</p>`;
+    body=names.length?`<div class="board c4">${names.map(n=>
+        colHTML(n,bySort(map[n]),{cap:12})).join("")}</div>`
       :`<div class="empty"><p>No one is holding anything.</p><span>ADD @NAME WHEN YOU CAPTURE</span></div>`;
+  }
+  else if(m==="over"){
+    const arr=byDue(live.filter(overdue));
+    const late=t=>-dayDiff(TODAY(),t.next);
+    head=`<h1>Overdue</h1><p>Past the date you set. ${arr.length} of them.</p>`;
+    body=`<div class="board c3">
+      ${colHTML("Just slipped · under a week",arr.filter(t=>late(t)<7),{urgent:true,cap:99,empty:"None."})}
+      ${colHTML("One to four weeks",arr.filter(t=>late(t)>=7&&late(t)<28),{cap:99,empty:"None."})}
+      ${colHTML("Over a month · decide or drop",arr.filter(t=>late(t)>=28),{cap:99,empty:"None."})}
+    </div>`;
+  }
+  else if(m==="quiet"){
+    const arr=bySort(live.filter(goneQuiet));
+    head=`<h1>Gone quiet</h1><p>No update in ${QUIET}+ days. The further right, the more likely it's dead.</p>`;
+    body=`<div class="board c3">
+      ${colHTML("Three to five weeks",arr.filter(t=>quietDays(t)<35),{cap:99,empty:"None."})}
+      ${colHTML("Five weeks to two months",arr.filter(t=>quietDays(t)>=35&&quietDays(t)<60),{cap:99,empty:"None."})}
+      ${colHTML("Over two months · pick up or drop",arr.filter(t=>quietDays(t)>=60),{cap:99,empty:"None."})}
+    </div>`;
+  }
+  else if(m==="lane"){
+    const arr=live.filter(t=>t.lane===view.arg);
+    head=`<h1>${LANES[view.arg]}</h1><p>${arr.length} open</p><span class="sp"></span>${segs}`;
+    body=`<div class="board c3">
+      ${colHTML("Needs attention",bySort(arr.filter(t=>overdue(t)||t.status==="offtrack"||t.status==="blocked")),{urgent:true,cap:99,empty:"Nothing on fire."})}
+      ${colHTML("Moving",bySort(arr.filter(t=>!overdue(t)&&(t.status==="ontrack"||t.status==="waiting"))),{cap:99,empty:"Nothing in flight."})}
+      ${colHTML("Open",bySort(arr.filter(t=>!overdue(t)&&t.status==="open")),{cap:99,empty:"Nothing waiting."})}
+    </div>`;
+  }
+  else if(m==="status"){
+    const arr=bySort(live.filter(t=>t.status===view.arg));
+    head=`<h1>${STATUS[view.arg].label}</h1><p>${arr.length} threads</p><span class="sp"></span>${segs}`;
+    body=`<div class="group">${listHTML(arr)}</div>`;
+  }
+  else if(m==="all"){
+    head=`<h1>All threads</h1><p>${live.length} open</p><span class="sp"></span>${segs}`;
+    body=`<div class="group">${listHTML(bySort(live))}</div>`;
+  }
+  else if(m==="done"||m==="arch"){
+    const arr=DB.threads.filter(t=>m==="done"?(t.status==="done"&&!t.arch):t.arch)
+      .sort((a,b)=>new Date(b.updated)-new Date(a.updated));
+    head=`<h1>${m==="done"?"Closed":"Archive"}</h1><p>${arr.length} threads · the log stays with them</p>`;
+    body=`<div class="group">${listHTML(arr)}</div>`;
   }
   else if(m==="journal"){
     const ents=[];
@@ -754,18 +837,20 @@ function render(){
     ents.sort((a,b)=>new Date(b.l.ts)-new Date(a.l.ts));
     const days={};
     ents.slice(0,300).forEach(e=>{const d=e.l.ts.slice(0,10);(days[d]=days[d]||[]).push(e);});
-    head=`<h1>Journal</h1><p>Every update ever written, newest first. This is the raw material for the weekly digest.</p>`;
-    body=Object.keys(days).sort().reverse().map(d=>{
+    head=`<h1>Journal</h1><p>Every update ever written, newest first.</p>`;
+    body=`<div class="group">`+Object.keys(days).sort().reverse().map(d=>{
       const dt=new Date(d+"T00:00:00");
       return `<div class="jday"><div class="when">${WD[dt.getDay()]}<em>${shortDate(d)}</em></div><div>${
         days[d].map(e=>`<div class="jent"><span class="tick${e.l.kind==="status"?" st":""}">${e.l.kind==="status"?"◆":"●"}</span>
           <span class="b"><b data-id="${e.t.id}">${esc(e.t.title)}</b><p>${esc(e.l.text)}</p></span></div>`).join("")
-      }</div></div>`;}).join("");
+      }</div></div>`;}).join("")+`</div>`;
   }
-  $("#main").innerHTML=`<div class="head">${head}</div><div class="group">${body}</div>`;
-  $("#main").querySelectorAll(".row").forEach(r=>r.onclick=()=>open(r.dataset.id));
+  $("#main").innerHTML=`<div class="head">${head}</div>${strip}${body}`;
+  $("#main").querySelectorAll(".crow,.row").forEach(r=>r.onclick=()=>open(r.dataset.id));
   $("#main").querySelectorAll(".jent b").forEach(b=>b.onclick=()=>open(b.dataset.id));
   $("#main").querySelectorAll("[data-sort]").forEach(b=>b.onclick=()=>{sort=b.dataset.sort;render();});
+  $("#main").querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{view={mode:b.dataset.go==="due"?"today":b.dataset.go,arg:""};render();});
+  $("#main").querySelectorAll(".colmore").forEach(b=>b.onclick=()=>{view={mode:b.dataset.view,arg:b.dataset.arg||""};render();});
   if(sel)renderDrawer();
 }
 
@@ -1031,9 +1116,143 @@ $("#btnHelp").onclick=()=>sheet("How this works",`
   <p><b>Silence is the signal.</b> Every row shows days since the last update. At ${QUIET} days a thread turns amber and surfaces itself in <b>Gone quiet</b> — that's the failure mode of a notes file, made visible.</p>
   <p><b>People view</b> groups everything by who is holding it. Open it before a 1:1.</p>
   <p><b>On your phone</b> — with GitHub sync on, add the page to your home screen and capture straight into the app. See <b>⋯ → Laptop and phone</b>.</p>
-  <p><b>Keys</b> — <span class="mono">c</span> capture · <span class="mono">1</span> radar · <span class="mono">t</span> theme · <span class="mono">⌘↵</span> file an update · <span class="mono">Esc</span> close.</p>
+  <p><b>Search</b> — <span class="mono">⌘K</span> or <span class="mono">/</span>. It looks through titles, people, refs, notes and every line of every ledger, so "WAF" finds the thread even if the word only appears in an update you wrote in March.</p>
+  <p><b>Keys</b> — <span class="mono">⌘K</span> search · <span class="mono">c</span> capture · <span class="mono">1</span> radar · <span class="mono">t</span> theme · <span class="mono">⌘↵</span> file an update · <span class="mono">Esc</span> close.</p>
   <p><b>Where it lives</b> — <b>⋯ → Where my data lives</b>. A private GitHub repo syncs laptop and phone and gives every save its own commit. An Obsidian folder keeps it as markdown on this Mac. Either way the browser holds a copy, so it works offline.</p>
   <p><b>AI</b> — add your own GPT-4o-mini key under <b>AI → Key</b>. It's held in this browser only, never written into the vault. Nothing calls out until you add it.</p>`);
+
+
+/* ---------- search: every field, every log line ---------- */
+function searchAll(q){
+  const s=q.trim().toLowerCase();
+  if(!s)return[];
+  const terms=s.split(/\s+/).filter(Boolean);
+  const out=[];
+  DB.threads.forEach(t=>{
+    const head=(t.title||"").toLowerCase();
+    const meta=[t.who,t.ref,LANES[t.lane],KINDS[t.kind],STATUS[t.status].label,(t.tags||[]).join(" ")].join(" ").toLowerCase();
+    let score=0,ctx="",ok=true;
+    terms.forEach(term=>{
+      const bare=term.replace(/^[@#]/,"");
+      if(head.includes(bare))score+=12;
+      else if(meta.includes(bare))score+=7;
+      else{
+        const inNotes=(t.notes||"").toLowerCase().includes(bare);
+        const hit=t.log.find(l=>l.text.toLowerCase().includes(bare));
+        if(inNotes){score+=4;if(!ctx)ctx=t.notes;}
+        else if(hit){score+=3;if(!ctx)ctx=hit.text;}
+        else ok=false;
+      }
+    });
+    if(ok&&score>0){
+      if(!isLive(t))score-=6;
+      out.push({t,score,ctx:ctx||[t.who?"@"+t.who:"",t.ref,LANES[t.lane]].filter(Boolean).join("  ·  ")});
+    }
+  });
+  return out.sort((a,b)=>b.score-a.score||quietDays(a.t)-quietDays(b.t)).slice(0,50);
+}
+function hi(text,q){
+  const terms=q.trim().toLowerCase().split(/\s+/).map(s=>s.replace(/^[@#]/,"")).filter(s=>s.length>1);
+  let h=esc(text||"");
+  terms.forEach(term=>{
+    const re=new RegExp("("+term.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","ig");
+    h=h.replace(re,"<mark>$1</mark>");
+  });
+  return h;
+}
+const Pal={
+  open(seed){
+    $("#pal").classList.add("on");
+    const i=$("#palIn");i.value=seed||"";this.run(i.value);
+    setTimeout(()=>{i.focus();i.select();},20);
+  },
+  close(){$("#pal").classList.remove("on");$("#palIn").value="";},
+  idx:0,hits:[],
+  run(q){
+    this.hits=searchAll(q);this.idx=0;
+    const box=$("#palRes");
+    if(!q.trim()){
+      const recent=DB.threads.filter(isLive).slice().sort((a,b)=>new Date(b.updated)-new Date(a.updated)).slice(0,8);
+      this.hits=recent.map(t=>({t,ctx:(t.log[0]||{}).text||""}));
+      box.innerHTML=`<div class="palfoot" style="border:none;padding:8px 11px">recently touched</div>`+this.render(q);
+      return this.mark();
+    }
+    if(!this.hits.length){
+      box.innerHTML=`<div class="palnone"><p>Nothing matches “${esc(q)}”.</p>
+        <div class="rowbtns"><button class="abtn go" id="palNew">Start a thread called “${esc(q.slice(0,40))}”</button></div></div>`;
+      $("#palNew").onclick=()=>{const t=create(q);Pal.close();if(t){render();open(t.id);toast("Filed");}};
+      return;
+    }
+    box.innerHTML=this.render(q);this.mark();
+  },
+  render(q){
+    return this.hits.map((h,i)=>`<button class="pres" data-i="${i}" data-id="${h.t.id}">
+      <span class="spine" style="background:${STATUS[h.t.status].c}"></span>
+      <span><b>${hi(h.t.title,q)}</b>${h.ctx?`<small>${hi(h.ctx.slice(0,110),q)}</small>`:""}</span>
+      <span class="k">${h.t.next?dueLabel(h.t.next).txt:quietDays(h.t)+"d"}</span></button>`).join("");
+  },
+  mark(){
+    const box=$("#palRes");
+    box.querySelectorAll(".pres").forEach((el,i)=>{
+      el.setAttribute("aria-selected",i===this.idx);
+      el.onmouseenter=()=>{this.idx=i;this.mark();};
+      el.onclick=()=>this.go(i);
+    });
+    const cur=box.querySelector('[aria-selected="true"]');
+    if(cur&&cur.scrollIntoView)cur.scrollIntoView({block:"nearest"});
+  },
+  move(d){if(!this.hits.length)return;this.idx=(this.idx+d+this.hits.length)%this.hits.length;this.mark();},
+  go(i){const h=this.hits[i===undefined?this.idx:i];if(!h)return;this.close();open(h.t.id);}
+};
+let palT=null;
+$("#palIn").oninput=e=>{clearTimeout(palT);const v=e.target.value;palT=setTimeout(()=>Pal.run(v),110);};
+$("#palIn").onkeydown=e=>{
+  if(e.key==="ArrowDown"){e.preventDefault();Pal.move(1);}
+  else if(e.key==="ArrowUp"){e.preventDefault();Pal.move(-1);}
+  else if(e.key==="Enter"){e.preventDefault();Pal.go();}
+  else if(e.key==="Escape"){e.preventDefault();Pal.close();}
+};
+$("#pal").onclick=e=>{if(e.target.id==="pal")Pal.close();};
+$("#btnFind").onclick=()=>Pal.open();
+
+/* ---------- bulk paste: no AI needed ---------- */
+function pasteSheet(){
+  sheet("Paste a note",`<p>One line per thing. Blank lines, headings and numbering are stripped. The shorthand works here too — <span class="mono" style="font-size:12px;color:var(--chalk-3)">@person #lane !date ~30d</span></p>
+    <textarea id="pIn" style="min-height:190px" placeholder="1. follow up with archit on WAF @archit !fri
+2. concur report to rajesh
+- cosmos db hot partition #learn
+- call cyrus monthly ~30d
+zaggle claim #self"></textarea>
+    <div class="rowbtns" style="margin-top:10px"><button class="abtn go" id="pGo">Read it</button>
+      ${AI.ready()?`<button class="abtn" id="pAI">Let the AI sort it instead</button>`:""}</div>
+    <div id="pOut" style="margin-top:14px"></div>`);
+  if($("#pAI"))$("#pAI").onclick=()=>{const v=$("#pIn").value;aiSheet("dump");setTimeout(()=>{if($("#dIn")){$("#dIn").value=v;}},80);};
+  $("#pGo").onclick=()=>{
+    const lines=$("#pIn").value.split(/\r?\n/).map(s=>s.trim())
+      .filter(s=>s&&!/^#{1,6}\s/.test(s)&&!s.startsWith(">"))
+      .map(s=>s.replace(/^\d+[.)]\s*/,"").replace(/^[-*•]\s*/,"").replace(/^\[[ x]\]\s*/i,"").trim())
+      .filter(Boolean);
+    const out=$("#pOut");
+    if(!lines.length){out.innerHTML=`<p class="aiout">No lines found.</p>`;return;}
+    const norm=s=>s.toLowerCase().replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(w=>w.length>3);
+    const parsed=lines.map(l=>({raw:l,p:parseCapture(l)}));
+    out.innerHTML=parsed.map((x,i)=>{
+      const w=norm(x.p.title);
+      const dup=DB.threads.find(t=>{const o=norm(t.title);const hit=w.filter(k=>o.includes(k)).length;return w.length&&hit/w.length>=0.6;});
+      return `<label class="cand"><input type="checkbox" ${dup?"":"checked"} data-i="${i}">
+        <span><b>${esc(x.p.title)}</b><span${dup?' class="dup"':''}>${
+          [LANES[x.p.lane],x.p.who?"@"+x.p.who:"",x.p.next||"",x.p.cadence?"~"+x.p.cadence+"d":"",
+           dup?"· already have “"+dup.title.slice(0,30)+"”":""].filter(Boolean).join("  ·  ")}</span></span></label>`;
+    }).join("")+`<div class="rowbtns" style="margin-top:12px"><button class="abtn go" id="pFile">File the ticked ones</button></div>`;
+    $("#pFile").onclick=()=>{
+      let n=0;
+      out.querySelectorAll("input:checked").forEach(cb=>{
+        const t=create(parsed[+cb.dataset.i].raw);if(t)n++;
+      });
+      save();closeSheet();view={mode:"today",arg:""};render();toast(n+" thread"+(n===1?"":"s")+" filed");
+    };
+  };
+}
 
 /* ---------- look ---------- */
 const THEMES={ink:["Ink","#0E1114","#1B212A","#E2A03F","#77A46B"],
@@ -1071,12 +1290,15 @@ capIn.onkeydown=e=>{
   if(e.key==="Escape")capIn.blur();
 };
 document.addEventListener("keydown",e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();return Pal.open();}
   const typing=/INPUT|TEXTAREA/.test(e.target.tagName)||e.target.isContentEditable;
-  if(e.key==="Escape"){if(document.getElementById("menu"))closeMenu();else if($("#veil").classList.contains("on"))closeSheet();else if(sel)close();return;}
+  if(e.key==="Escape"){if($("#pal").classList.contains("on"))Pal.close();
+    else if(document.getElementById("menu"))closeMenu();else if($("#veil").classList.contains("on"))closeSheet();else if(sel)close();return;}
   if(typing)return;
-  if(e.key==="c"||e.key==="/"){e.preventDefault();capIn.focus();}
+  if(e.key==="c"){e.preventDefault();capIn.focus();}
+  if(e.key==="/"){e.preventDefault();Pal.open();}
   if(e.key==="t"){const k=Object.keys(THEMES),i=k.indexOf(document.documentElement.dataset.theme);theme(k[(i+1)%k.length]);}
-  const map={"1":["radar",""],"2":["quiet",""],"3":["people",""],"4":["journal",""]};
+  const map={"1":["today",""],"2":["quiet",""],"3":["people",""],"4":["lanes",""]};
   if(map[e.key]){view={mode:map[e.key][0],arg:map[e.key][1]};render();}
 });
 
@@ -1489,6 +1711,7 @@ function aiSheet(tab){
 }
 $("#btnAI").onclick=()=>aiSheet(AI.ready()?"brief":"keys");
 $("#btnMore").onclick=e=>menu(e.currentTarget,[
+  {label:"Paste a note",fn:pasteSheet},
   {label:"Weekly digest",fn:()=>$("#btnDigest").click()},
   {label:"Where my data lives",fn:storageSheet},
   {label:"Laptop and phone",fn:devicesSheet},
@@ -1714,7 +1937,8 @@ function storageSheet(){
     ${m==="obsidian"?`<div class="rowbtns" style="margin-top:14px"><button class="abtn go" id="oLink">${Vault.ready()?"Re-link a folder":"Link a vault folder"}</button>
       ${Vault.ready()?`<button class="abtn" id="oSync">Save now</button><button class="abtn" id="oPhone">Phone capture</button>`:""}</div>`:""}
     <p class="note">Whatever you pick, this browser keeps its own copy too, so the app works with no connection and catches up later. <b>Nothing is ever deleted</b> \u2014 when two devices disagree, the log lines from both are kept.</p>
-    <div class="rowbtns"><button class="abtn" id="sDl">Download a backup</button><button class="abtn" id="sImp">Restore a backup</button></div>`);
+    <div class="rowbtns"><button class="abtn" id="sDl">Download a backup</button><button class="abtn" id="sImp">Restore a backup</button>
+      <button class="abtn" id="sWipe" style="margin-left:auto;color:var(--rust)">Start fresh</button></div>`);
 
   $("#sheet").querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{
     const to=b.dataset.m;
@@ -1729,6 +1953,24 @@ function storageSheet(){
   if($("#oLink"))$("#oLink").onclick=()=>{closeSheet();Vault.connect();};
   if($("#oSync"))$("#oSync").onclick=async()=>{closeSheet();await Vault.pull();await Vault.push(true);toast("Saved");};
   if($("#oPhone"))$("#oPhone").onclick=()=>{closeSheet();phoneSheet();};
+  $("#sWipe").onclick=()=>{
+    const n=DB.threads.length,l=DB.threads.reduce((a,t)=>a+t.log.length,0);
+    sheet("Start fresh",`<p>This deletes <b>${n} thread${n===1?"":"s"}</b> and <b>${l} log line${l===1?"":"s"}</b> from this device${
+      Sync.mode==="github"&&Git.ready()?` and replaces <b>${esc(Git.cfg.owner)}/${esc(Git.cfg.repo)}</b> with an empty file`:""}.</p>
+      <p>Your sync settings and keys are kept, so you won't have to reconnect anything.</p>
+      <p class="note">${Sync.mode==="github"&&Git.ready()?"The old data stays in the repo's commit history, so it is recoverable from GitHub if you change your mind.":"Take a backup first if you're unsure — nothing here can be undone."}</p>`,
+      `<button class="abtn" id="wCancel">Keep everything</button>
+       <button class="abtn" id="wBak">Back up first</button>
+       <button class="abtn go" id="wYes" style="color:var(--rust);border-color:var(--rust)">Delete it all</button>`);
+    $("#wCancel").onclick=storageSheet;
+    $("#wBak").onclick=()=>dlBundle();
+    $("#wYes").onclick=async()=>{
+      DB.threads=[];DB.written={};save();
+      if(Sync.mode==="github"&&Git.ready()){Git.sha=null;await Git.read().catch(()=>{});await Git.push();}
+      sel=null;$("#split").classList.remove("open");view={mode:"today",arg:""};
+      closeSheet();render();toast("Clean slate");
+    };
+  };
   $("#sDl").onclick=()=>{closeSheet();dlBundle();};
   $("#sImp").onclick=()=>{
     const i=document.createElement("input");i.type="file";i.accept=".json";
