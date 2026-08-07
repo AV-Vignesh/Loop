@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Loop</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Loop">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0E1114" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F6F4EF" media="(prefers-color-scheme: light)">
+<meta name="color-scheme" content="dark light">
+<style>
+/* ============ tokens: slate desk, chalk ink, ochre signal ============ */
+/* Ink — the default: slate desk, chalk ink, ochre signal */
+:root{
+  color-scheme:dark;
+  --paper:#0E1114; --track:rgba(255,255,255,.06); --scroll:rgba(255,255,255,.10); --sel:rgba(226,160,63,.28);
+  --lift:0 14px 36px rgba(0,0,0,.5);
+  --slate:#0E1114; --slate-1:#14181D; --slate-2:#1B212A; --slate-3:#222A34;
+  --rule:rgba(255,255,255,.07); --rule-soft:rgba(255,255,255,.04); --rule-hard:rgba(255,255,255,.14);
+  --chalk:#E7E9EB; --chalk-2:#A6ADB4; --chalk-3:#727A82; --chalk-4:#4C545C;
+  --ochre:#E2A03F;              /* the one accent: this needs you today */
+  --ochre-dim:rgba(226,160,63,.13);
+  --moss:#77A46B; --rust:#C46748; --ember:#B9463C; --dusk:#7E8CB4; --ash:#59626B;
+  --ui:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  --note:ui-serif,"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --r-s:5px; --r-m:8px; --r-l:12px;
+  --rail:236px; --drawer:432px;
+}
+/* Paper — warm daylight, burnt ochre */
+[data-theme="paper"]{
+  color-scheme:light;
+  --slate:#F6F4EF; --slate-1:#FFFDFA; --slate-2:#EFEBE3; --slate-3:#E4DFD5;
+  --rule:rgba(28,24,17,.11); --rule-soft:rgba(28,24,17,.06); --rule-hard:rgba(28,24,17,.22);
+  --chalk:#1D1A15; --chalk-2:#4B463D; --chalk-3:#7C7669; --chalk-4:#A8A196;
+  --ochre:#A76A10; --ochre-dim:rgba(167,106,16,.11);
+  --moss:#4C7742; --rust:#A2452A; --ember:#8F3227; --dusk:#4C5A85; --ash:#A19B90;
+  --paper:#FFFDFA; --track:rgba(28,24,17,.08); --scroll:rgba(28,24,17,.16); --sel:rgba(167,106,16,.22);
+  --lift:0 10px 30px rgba(40,34,24,.14);
+}
+/* Nocturne — deep indigo, cold signal */
+[data-theme="nocturne"]{
+  color-scheme:dark;
+  --slate:#0A0E16; --slate-1:#101725; --slate-2:#182031; --slate-3:#212C42;
+  --rule:rgba(180,205,255,.09); --rule-soft:rgba(180,205,255,.05); --rule-hard:rgba(180,205,255,.18);
+  --chalk:#E3E9F4; --chalk-2:#A2AFC7; --chalk-3:#6E7C95; --chalk-4:#4A546A;
+  --ochre:#6ECFDD; --ochre-dim:rgba(110,207,221,.13);
+  --moss:#5CB18F; --rust:#DE7C6B; --ember:#CF554C; --dusk:#8B9BD2; --ash:#4E5970;
+  --paper:#0A0E16; --track:rgba(180,205,255,.07); --scroll:rgba(180,205,255,.12); --sel:rgba(110,207,221,.26);
+  --lift:0 14px 40px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--slate); color:var(--chalk); font:400 14px/1.5 var(--ui);
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; overflow:hidden;
+}
+button,input,textarea,select{font:inherit;color:inherit;background:none;border:none;outline:none}
+button{cursor:pointer}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:9px}
+::-webkit-scrollbar-thumb:hover{background:var(--rule-hard)}
+::selection{background:var(--sel)}
+:focus-visible{outline:2px solid var(--ochre);outline-offset:2px;border-radius:4px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ============ frame ============ */
+.app{display:grid;grid-template-rows:auto auto minmax(0,1fr);height:100%}
+.bar{
+  display:flex;align-items:center;gap:14px;padding:0 16px;height:56px;
+  border-bottom:1px solid var(--rule);background:var(--slate);
+  padding-top:env(safe-area-inset-top);height:calc(56px + env(safe-area-inset-top));
+}
+.mark{display:flex;align-items:baseline;gap:8px;flex:none;user-select:none}
+.mark b{font:600 16px/1 var(--ui);letter-spacing:-.02em}
+.mark i{font:italic 400 12px/1 var(--note);color:var(--chalk-4)}
+
+.capture{flex:1;position:relative;max-width:none}
+.capture input{
+  width:100%;height:34px;padding:0 12px 0 30px;background:var(--slate-1);
+  border:1px solid var(--rule);border-radius:var(--r-s);font-size:13.5px;
+  transition:border-color .15s cubic-bezier(.23,1,.32,1),background .15s;
+}
+.capture input::placeholder{color:var(--chalk-4)}
+.capture input:focus{border-color:var(--rule-hard);background:var(--slate-2)}
+.capture .plus{position:absolute;left:10px;top:9px;color:var(--chalk-4);font-size:15px;line-height:16px;pointer-events:none}
+.capture .hint{
+  position:absolute;top:40px;left:0;right:0;z-index:40;background:var(--slate-2);
+  border:1px solid var(--rule-hard);border-radius:var(--r-m);padding:10px 12px;
+  font:400 11.5px/1.7 var(--mono);color:var(--chalk-3);
+  box-shadow:var(--lift);display:none;
+}
+.capture.on .hint{display:block}
+.capture .hint b{color:var(--ochre);font-weight:500}
+
+.chip{display:flex;align-items:center;gap:7px;height:27px;padding:0 10px;border-radius:99px;flex:none;
+  border:1px solid var(--rule);font:500 11px/1 var(--mono);color:var(--chalk-3);transition:.15s;letter-spacing:.02em}
+.chip:hover{border-color:var(--rule-hard);color:var(--chalk-2)}
+.chip .led{width:6px;height:6px;border-radius:50%;background:var(--ash);flex:none}
+.chip.on{border-color:rgba(119,164,107,.32);color:var(--moss)}
+.chip.on .led{background:var(--moss);box-shadow:0 0 6px rgba(119,164,107,.55)}
+.chip.warn{border-color:rgba(226,160,63,.32);color:var(--ochre)}
+.chip.warn .led{background:var(--ochre)}
+.chip.busy .led{background:var(--ochre);animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+.bar .tools{display:flex;gap:2px;flex:none}
+.tbtn{
+  height:30px;padding:0 10px;border-radius:var(--r-s);color:var(--chalk-3);
+  font:500 12px/30px var(--ui);transition:background .12s,color .12s;
+}
+.tbtn:hover{background:var(--slate-2);color:var(--chalk)}
+.tbtn:active{transform:scale(.97)}
+
+/* ============ body split ============ */
+.split{display:grid;grid-template-columns:var(--rail) 1fr;grid-template-rows:minmax(0,1fr);min-height:0}
+.split.open{grid-template-columns:var(--rail) 1fr var(--drawer)}
+
+.rail{border-right:1px solid var(--rule);overflow-y:auto;padding:14px 10px 24px;display:flex;flex-direction:column}
+.rail h6{
+  font:500 10px/1 var(--mono);letter-spacing:.13em;text-transform:uppercase;
+  color:var(--chalk-4);padding:0 8px;margin:18px 0 7px;
+}
+.rail h6:first-child{margin-top:2px}
+.nav{display:flex;align-items:center;gap:9px;height:31px;padding:0 8px;border-radius:var(--r-s);
+  color:var(--chalk-2);font-size:13px;transition:background .12s,color .12s;width:100%;text-align:left}
+.nav:hover{background:var(--slate-1);color:var(--chalk)}
+.nav[aria-current="true"]{background:var(--slate-2);color:var(--chalk);font-weight:500}
+.nav .n{margin-left:auto;font:400 11px/1 var(--mono);color:var(--chalk-4)}
+.nav[aria-current="true"] .n{color:var(--chalk-3)}
+.nav .dot{width:6px;height:6px;border-radius:50%;flex:none}
+.nav.alert .n{color:var(--ochre)}
+.creed{margin-top:auto;padding:16px 8px 0;border-top:1px solid var(--rule-soft)}
+.creed p{font:italic 400 13px/1.45 var(--note);color:var(--chalk-3)}
+.creed span{display:block;margin-top:6px;font:400 10px/1 var(--mono);color:var(--chalk-4);letter-spacing:.08em}
+
+/* ============ main ============ */
+.main{overflow-y:auto;min-width:0;position:relative}
+.head{padding:22px 26px 12px;display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.head h1{font:600 21px/1.2 var(--ui);letter-spacing:-.02em}
+.head p{font:400 12.5px/1.4 var(--ui);color:var(--chalk-3);padding-bottom:2px}
+.head .sp{flex:1}
+.seg{display:flex;gap:1px;background:var(--slate-1);border:1px solid var(--rule);border-radius:var(--r-s);padding:2px}
+.seg button{height:24px;padding:0 9px;border-radius:3px;font:500 11.5px/24px var(--ui);color:var(--chalk-3)}
+.seg button[aria-pressed="true"]{background:var(--slate-3);color:var(--chalk)}
+
+.group{padding:0 26px}
+.gh{display:flex;align-items:center;gap:10px;padding:20px 0 8px}
+.gh b{font:500 11px/1 var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--chalk-3)}
+.gh .n{font:400 11px/1 var(--mono);color:var(--chalk-4)}
+.gh .line{flex:1;height:1px;background:var(--rule-soft)}
+.gh.urgent b{color:var(--ochre)}
+
+.rows{display:flex;flex-direction:column}
+.row{
+  display:grid;grid-template-columns:3px 1fr auto;gap:0 13px;align-items:center;
+  padding:9px 12px 9px 0;border-bottom:1px solid var(--rule-soft);text-align:left;width:100%;
+  transition:background .1s;position:relative;
+}
+.row:hover{background:var(--slate-1)}
+.row.sel{background:var(--slate-2)}
+.row .spine{width:3px;height:26px;border-radius:2px;background:var(--ash)}
+.row .t{min-width:0}
+.row .t h3{font:500 14.5px/1.35 var(--ui);color:var(--chalk);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row.done .t h3{color:var(--chalk-3);text-decoration:line-through;text-decoration-color:var(--chalk-4)}
+.row .meta{display:flex;align-items:center;gap:7px;margin-top:3px;font:400 11px/1.3 var(--mono);color:var(--chalk-4);overflow:hidden;white-space:nowrap}
+.row .meta .who{color:var(--dusk)}
+.row .meta .ref{color:var(--chalk-3)}
+.row .meta em{font-style:normal;color:var(--chalk-3);overflow:hidden;text-overflow:ellipsis;min-width:0}
+.row .rt{display:flex;align-items:center;gap:14px;flex:none}
+.due{font:500 11px/1 var(--mono);color:var(--chalk-3);white-space:nowrap}
+.due.hot{color:var(--ochre)}
+.due.past{color:var(--rust)}
+.quiet{width:56px;display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+.quiet .bar{width:100%;height:3px;border-radius:2px;background:var(--track);overflow:hidden}
+.quiet .bar i{display:block;height:100%;background:var(--ash);border-radius:2px;transition:width .3s}
+.quiet .d{font:400 10px/1 var(--mono);color:var(--chalk-4)}
+.quiet.warm .bar i{background:var(--ochre)} .quiet.warm .d{color:var(--ochre)}
+.quiet.cold .bar i{background:var(--rust)} .quiet.cold .d{color:var(--rust)}
+
+.empty{padding:60px 26px;text-align:center;color:var(--chalk-4)}
+.empty p{font:italic 400 15px/1.5 var(--note);color:var(--chalk-3);margin-bottom:6px}
+.empty span{font:400 11.5px/1 var(--mono)}
+
+/* people + journal */
+.pcard{border:1px solid var(--rule);border-radius:var(--r-m);margin-bottom:12px;overflow:hidden;background:var(--slate-1)}
+.pcard header{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--rule-soft)}
+.pcard header b{font:600 13.5px/1 var(--ui)}
+.pcard header .n{font:400 11px/1 var(--mono);color:var(--chalk-4);margin-left:auto}
+.av{width:24px;height:24px;border-radius:50%;background:var(--slate-3);color:var(--dusk);
+  font:600 10px/24px var(--mono);text-align:center;flex:none;letter-spacing:.02em}
+.pcard .rows .row{padding-left:14px;padding-right:14px}
+.pcard .rows .row:last-child{border-bottom:none}
+
+.jday{display:grid;grid-template-columns:96px 1fr;gap:16px;padding:14px 0;border-bottom:1px solid var(--rule-soft)}
+.jday .when{font:500 11px/1.5 var(--mono);color:var(--chalk-4);padding-top:2px}
+.jday .when em{display:block;font-style:normal;color:var(--chalk-3)}
+.jent{padding:5px 0;display:flex;gap:9px;align-items:baseline}
+.jent .tick{color:var(--chalk-4);font-size:9px;line-height:20px;flex:none}
+.jent .tick.st{color:var(--ochre)}
+.jent .b{min-width:0}
+.jent .b b{font:500 12.5px/1.4 var(--ui);color:var(--chalk-2);cursor:pointer}
+.jent .b b:hover{color:var(--ochre)}
+.jent .b p{font:400 13px/1.5 var(--ui);color:var(--chalk)}
+
+/* ============ drawer ============ */
+.drawer{border-left:1px solid var(--rule);background:var(--slate-1);overflow-y:auto;display:none;flex-direction:column}
+.split.open .drawer{display:flex}
+.dhead{padding:18px 20px 14px;border-bottom:1px solid var(--rule)}
+.dhead .top{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}
+.dhead h2{font:600 17px/1.35 var(--ui);letter-spacing:-.01em;flex:1;border-radius:4px;padding:1px 3px;margin-left:-3px}
+.dhead h2:focus{background:var(--slate-3);outline:none}
+.x{width:26px;height:26px;border-radius:var(--r-s);color:var(--chalk-4);font-size:15px;line-height:26px;text-align:center;flex:none}
+.x:hover{background:var(--slate-3);color:var(--chalk)}
+.facts{display:grid;grid-template-columns:74px 1fr;gap:7px 12px;align-items:center}
+.facts dt{font:400 10.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--chalk-4)}
+.facts dd{min-width:0}
+.pick{height:26px;padding:0 8px;border-radius:var(--r-s);background:var(--slate-2);border:1px solid var(--rule);
+  font:500 12px/24px var(--ui);color:var(--chalk-2);max-width:100%;cursor:pointer;
+  appearance:none;-webkit-appearance:none;background-image:none}
+.pick{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23727A82'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;padding-right:22px}
+.pick:hover{border-color:var(--rule-hard)}
+.fld{width:100%;height:26px;padding:0 8px;border-radius:var(--r-s);background:var(--slate-2);
+  border:1px solid var(--rule);font:400 12.5px/24px var(--ui);color:var(--chalk)}
+.fld::placeholder{color:var(--chalk-4)}
+.fld:focus{border-color:var(--rule-hard)}
+.fld.mono{font-family:var(--mono);font-size:12px}
+input[type=date].fld::-webkit-calendar-picker-indicator{filter:invert(.55);cursor:pointer}
+[data-theme="paper"] input[type=date].fld::-webkit-calendar-picker-indicator{filter:none}
+
+.acts{display:flex;gap:6px;padding:12px 20px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.abtn{height:28px;padding:0 11px;border-radius:var(--r-s);border:1px solid var(--rule);
+  background:var(--slate-2);font:500 12px/26px var(--ui);color:var(--chalk-2);transition:.12s}
+.abtn:hover{border-color:var(--rule-hard);color:var(--chalk)}
+.abtn:active{transform:scale(.97)}
+.abtn.go{background:var(--ochre-dim);border-color:rgba(226,160,63,.3);color:var(--ochre)}
+.abtn.go:hover{background:rgba(226,160,63,.2)}
+
+.compose{padding:14px 20px;border-bottom:1px solid var(--rule)}
+.compose textarea{
+  width:100%;min-height:62px;padding:10px 11px;background:var(--slate-2);border:1px solid var(--rule);
+  border-radius:var(--r-m);font:400 13.5px/1.55 var(--ui);resize:vertical;
+}
+.compose textarea:focus{border-color:var(--rule-hard)}
+.compose textarea::placeholder{color:var(--chalk-4)}
+.compose .under{display:flex;align-items:center;gap:8px;margin-top:9px}
+.compose .under .sp{flex:1}
+.compose .under small{font:400 10.5px/1 var(--mono);color:var(--chalk-4)}
+.post{height:28px;padding:0 13px;border-radius:var(--r-s);background:var(--chalk);color:var(--paper);
+  font:600 12px/28px var(--ui);transition:.12s}
+.post:hover{background:#fff}
+.post:active{transform:scale(.97)}
+
+.ledger{padding:16px 20px 30px;flex:1}
+.ledger .cap{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ledger .cap b{font:500 10px/1 var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--chalk-4)}
+.ledger .cap .line{flex:1;height:1px;background:var(--rule-soft)}
+.ent{display:grid;grid-template-columns:56px 1fr;gap:0}
+.ent .stamp{font:400 10.5px/1.5 var(--mono);color:var(--chalk-4);text-align:right;padding:9px 14px 0 0}
+.ent .stamp em{display:block;font-style:normal;color:var(--chalk-3)}
+.ent .body{padding:9px 0 11px 17px;border-left:1px solid var(--rule-soft);position:relative}
+.ent:last-child .body{border-left-color:transparent;box-shadow:inset 1px 0 0 -0px transparent}
+.ent .body:before{content:"";position:absolute;left:-4.5px;top:13px;width:8px;height:8px;border-radius:50%;
+  box-sizing:border-box;background:var(--slate-1);border:1.5px solid var(--chalk-4)}
+.ent:last-child .body:after{content:"";position:absolute;left:-.5px;top:0;height:17px;width:1px;background:var(--rule-soft)}
+.ent.st .body:before{border-color:var(--ochre);background:var(--ochre)}
+.ent .body p{font:400 13.5px/1.55 var(--ui);color:var(--chalk-2);white-space:pre-wrap;overflow-wrap:anywhere}
+.ent.st .body p{color:var(--chalk)}
+.ent .body p b{font-weight:600;color:var(--chalk)}
+
+/* ============ overlay ============ */
+.veil{position:fixed;inset:0;background:rgba(6,8,10,.72);z-index:60;display:none;
+  align-items:center;justify-content:center;padding:24px}
+.veil.on{display:flex}
+.sheet{width:100%;max-width:620px;max-height:82vh;background:var(--slate-1);border:1px solid var(--rule-hard);
+  border-radius:var(--r-l);box-shadow:var(--lift);display:flex;flex-direction:column;
+  animation:pop .2s cubic-bezier(.23,1,.32,1)}
+@keyframes pop{from{opacity:0;transform:scale(.96) translateY(6px)}}
+.sheet header{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid var(--rule)}
+.sheet header b{font:600 14px/1 var(--ui);flex:1}
+.sheet .in{padding:18px;overflow-y:auto;flex:1;min-height:0}
+.sheet .in p{font-size:13px;color:var(--chalk-2);line-height:1.6;margin-bottom:12px}
+.sheet .in p b{color:var(--chalk)}
+.sheet pre{background:var(--slate);border:1px solid var(--rule);border-radius:var(--r-m);padding:14px;
+  font:400 11.5px/1.65 var(--mono);color:var(--chalk-2);white-space:pre-wrap;overflow-wrap:anywhere}
+.sheet footer{display:flex;gap:8px;padding:13px 18px;border-top:1px solid var(--rule);justify-content:flex-end}
+.opt{display:flex;gap:12px;padding:13px 14px;border:1px solid var(--rule);border-radius:var(--r-m);
+  margin-bottom:9px;text-align:left;width:100%;transition:.12s;background:var(--slate-2)}
+.opt:hover{border-color:var(--rule-hard)}
+.opt .ico{font:500 13px/1 var(--mono);color:var(--ochre);padding-top:2px;flex:none;width:18px}
+.opt b{display:block;font:600 13px/1.4 var(--ui);margin-bottom:2px}
+.opt span{font:400 12px/1.5 var(--ui);color:var(--chalk-3)}
+
+/* settings + ai */
+.kv{display:grid;grid-template-columns:112px 1fr;gap:10px 12px;align-items:center;margin-bottom:6px}
+.kv dt{font:400 10.5px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--chalk-4)}
+.kv dd{min-width:0}
+.kv dd .fld{height:30px;line-height:28px}
+.rowbtns{display:flex;gap:6px;flex-wrap:wrap}
+.note{font:400 11.5px/1.6 var(--mono);color:var(--chalk-4);padding:10px 12px;border-left:2px solid var(--rule-hard);
+  background:var(--slate-2);border-radius:0 var(--r-s) var(--r-s) 0;margin:12px 0}
+.note b{color:var(--chalk-2);font-weight:500}
+.spin{width:12px;height:12px;border:2px solid var(--track);border-top-color:var(--ochre);
+  border-radius:50%;display:inline-block;animation:sp .7s linear infinite;vertical-align:-1px;margin-right:7px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.aiout{font:400 13.5px/1.7 var(--ui);color:var(--chalk-2);white-space:pre-wrap;overflow-wrap:anywhere}
+.aiout b{color:var(--chalk);font-weight:600}
+.cand{display:grid;grid-template-columns:auto 1fr;gap:11px;align-items:start;padding:10px 12px;background:var(--slate-2);
+  border:1px solid var(--rule);border-radius:var(--r-m);margin-bottom:7px}
+.cand input[type=checkbox]{width:15px;height:15px;accent-color:var(--ochre);margin-top:2px;cursor:pointer}
+.cand b{display:block;font:500 13px/1.45 var(--ui);color:var(--chalk);margin-bottom:3px}
+.cand span{font:400 10.5px/1 var(--mono);color:var(--chalk-4);letter-spacing:.03em}
+.cand span.dup{color:var(--ochre)}
+.tabs{display:flex;gap:2px;margin-bottom:14px;border-bottom:1px solid var(--rule);padding-bottom:0}
+.tabs button{height:30px;padding:0 11px;font:500 12px/28px var(--ui);color:var(--chalk-4);border-bottom:2px solid transparent}
+.tabs button[aria-pressed="true"]{color:var(--chalk);border-bottom-color:var(--ochre)}
+.sheet .in textarea{width:100%;min-height:120px;padding:11px 12px;background:var(--slate);border:1px solid var(--rule);
+  border-radius:var(--r-m);font:400 13px/1.6 var(--ui);resize:vertical;color:var(--chalk)}
+.sheet .in textarea:focus{border-color:var(--rule-hard)}
+.menu{position:fixed;z-index:75;left:-9999px;top:0;background:var(--slate-2);border:1px solid var(--rule-hard);border-radius:var(--r-m);
+  padding:5px;min-width:196px;box-shadow:var(--lift);animation:pop .15s cubic-bezier(.23,1,.32,1);transform-origin:top right}
+.menu button{display:block;width:100%;text-align:left;height:31px;padding:0 10px;border-radius:var(--r-s);
+  font:400 13px/31px var(--ui);color:var(--chalk-2)}
+.menu button:hover{background:var(--slate-3);color:var(--chalk)}
+.menu .msep{height:1px;background:var(--rule-soft);margin:5px 8px}
+.menu .mnote{padding:4px 10px 6px;font:400 10.5px/1.4 var(--mono);color:var(--chalk-4)}
+.more{display:flex;align-items:center;gap:6px;height:28px;padding:0 8px;margin-top:6px;border-radius:var(--r-s);
+  font:500 10px/28px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--chalk-4);width:100%;text-align:left}
+.more:hover{background:var(--slate-1);color:var(--chalk-3)}
+.more i{font-style:normal;font-size:8px;transition:transform .15s}
+.more[aria-expanded="true"] i{transform:rotate(90deg)}
+.swatch{display:flex;gap:8px;margin-bottom:6px}
+.sw{flex:1;border:1px solid var(--rule);border-radius:var(--r-m);padding:10px;text-align:left;transition:.12s}
+.sw:hover{border-color:var(--rule-hard)}
+.sw[aria-pressed="true"]{border-color:var(--ochre);box-shadow:inset 0 0 0 1px var(--ochre)}
+.sw b{display:block;font:600 12.5px/1 var(--ui);margin-bottom:7px}
+.sw .strip{display:flex;height:16px;border-radius:3px;overflow:hidden}
+.sw .strip i{flex:1}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(10px);z-index:80;
+  background:var(--slate-3);border:1px solid var(--rule-hard);border-radius:var(--r-m);
+  padding:9px 15px;font:500 12.5px/1 var(--ui);color:var(--chalk);opacity:0;pointer-events:none;
+  transition:opacity .18s,transform .18s cubic-bezier(.23,1,.32,1);box-shadow:var(--lift)}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.banner{display:flex;align-items:center;gap:10px;padding:8px 26px;background:var(--ochre-dim);
+  border-bottom:1px solid rgba(226,160,63,.2);font:400 12px/1.4 var(--ui);color:var(--ochre)}
+.banner b{font-weight:600}
+.banner button{margin-left:auto;color:var(--ochre);font:500 12px/1 var(--ui);text-decoration:underline;text-underline-offset:2px}
+
+@media (max-width:620px){
+  .mark i{display:none}
+  .mark b{font-size:15px}
+  .chip{padding:0 7px}
+  .capture input{padding-left:26px;font-size:16px}
+  .row .rt{gap:9px}
+  .quiet{width:40px}
+}
+@media (max-width:1080px){
+  .split{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .split.open{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr)}
+  .rail{flex-direction:row;gap:3px;overflow-x:auto;overflow-y:hidden;
+    border-right:none;border-bottom:1px solid var(--rule);padding:8px 12px}
+  .rail h6,.rail .creed{display:none}
+  .nav{width:auto;flex:none;white-space:nowrap;height:28px}
+  .split.open .rail,.split.open .main{display:none}
+  .head{padding:16px 16px 10px}
+  .group{padding:0 16px}
+  .capture .hint{display:none!important}
+  .bar{gap:9px;padding:0 12px}
+  .rail{padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+  .ledger{padding-bottom:calc(30px + env(safe-area-inset-bottom))}
+  .veil{padding:10px}
+  .sheet{max-height:90vh}
+  .sheet .in{padding:14px}
+  .kv{grid-template-columns:1fr;gap:4px 0}
+  .kv dt{margin-top:8px}
+  #chipTxt{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="bar">
+    <div class="mark"><b>Loop</b><i>nothing goes quiet</i></div>
+    <div class="capture" id="cap">
+      <span class="plus">+</span>
+      <input id="capIn" placeholder="Capture a thread…  @person  #lane  !date  ~30d  /type" autocomplete="off" spellcheck="false">
+      <div class="hint">
+        <b>@archit</b> waiting on someone &nbsp;·&nbsp; <b>#work</b> lane &nbsp;·&nbsp; <b>!fri</b> or <b>!2026-08-12</b> follow-up date<br>
+        <b>~30d</b> repeats every 30 days &nbsp;·&nbsp; <b>/followup /develop /analyse /roadmap /learn</b> &nbsp;·&nbsp; press <b>Enter</b> to file
+      </div>
+    </div>
+    <button class="chip" id="chipVault" title="Obsidian vault"><span class="led"></span><span id="chipTxt">no vault</span></button>
+    <div class="tools">
+      <button class="tbtn" id="btnAI">AI</button>
+      <button class="tbtn" id="btnMore" title="More">&#8943;</button>
+    </div>
+  </div>
+  <div id="storeBanner"></div>
+  <div class="split" id="split">
+    <nav class="rail" id="rail"></nav>
+    <main class="main" id="main"></main>
+    <aside class="drawer" id="drawer"></aside>
+  </div>
+</div>
+<button id="btnDigest" hidden></button><button id="btnVault" hidden></button><button id="btnHelp" hidden></button>
+<div class="veil" id="veil"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+<script>
+/* ============================================================
+   Loop — a follow-up ledger.  Single file. Works offline.
+   Rules of the house: updates are append-only. Nothing is deleted.
+   ============================================================ */
+(function(){
+"use strict";
+
+/* ---------- storage: localStorage → memory fallback ---------- */
+const Store=(()=>{
+  const KEY="loop.v1"; let live=true, mem=null;
+  try{localStorage.setItem("__l","1");localStorage.removeItem("__l");}catch(e){live=false;}
+  return{
+    live,
+    read(){ try{ return live?JSON.parse(localStorage.getItem(KEY)||"null"):mem; }catch(e){ return null; } },
+    write(v){ if(live){ try{localStorage.setItem(KEY,JSON.stringify(v));}catch(e){live=false;mem=v;} } else mem=v; }
+  };
+})();
+
+/* ---------- dates ---------- */
+const DAY=864e5;
+const pad=n=>String(n).padStart(2,"0");
+const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const midnight=()=>{const d=new Date();d.setHours(0,0,0,0);return d;};
+const TODAY=()=>iso(midnight());
+const shift=n=>iso(new Date(midnight().getTime()+n*DAY));
+const dayDiff=(a,b)=>Math.round((new Date(b+"T00:00:00")-new Date(a+"T00:00:00"))/DAY);
+const sinceDays=ts=>Math.max(0,Math.floor((Date.now()-new Date(ts))/DAY));
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const WD=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+function shortDate(s){const d=new Date(s+"T00:00:00");return d.getDate()+" "+MON[d.getMonth()];}
+function dueLabel(s){
+  if(!s)return{txt:"",cls:""};
+  const g=dayDiff(TODAY(),s);
+  if(g<0)return{txt:Math.abs(g)+"d late",cls:"past"};
+  if(g===0)return{txt:"today",cls:"hot"};
+  if(g===1)return{txt:"tomorrow",cls:"hot"};
+  if(g<7)return{txt:WD[new Date(s+"T00:00:00").getDay()]+" "+shortDate(s),cls:g<=3?"hot":""};
+  return{txt:shortDate(s),cls:""};
+}
+function stamp(ts){const d=new Date(ts);return{d:d.getDate()+" "+MON[d.getMonth()],t:pad(d.getHours())+":"+pad(d.getMinutes())};}
+
+/* ---------- vocabulary (his words) ---------- */
+const LANES={work:"Work",map:"Road map",learn:"Learning",write:"Writing",self:"Personal"};
+const KINDS={followup:"Follow-up",develop:"Develop",analyse:"Analyse",roadmap:"Roadmap",learn:"Learn"};
+const STATUS={
+  open   :{label:"Open",       c:"var(--ash)"},
+  ontrack:{label:"On track",   c:"var(--moss)"},
+  offtrack:{label:"Off track", c:"var(--rust)"},
+  blocked:{label:"Blocked",    c:"var(--ember)"},
+  waiting:{label:"Waiting",    c:"var(--dusk)"},
+  done   :{label:"Done",       c:"var(--chalk-4)"}
+};
+const QUIET=21; // days of silence before a thread is flagged
+
+/* ---------- seed: everything from the notes ---------- */
+/* t title · l lane · k kind · s status · w who · r ref · n next(+days) · u days since update · c cadence · g tags · x last log line */
+const SEED=[
+ {t:"RITM0042345 — chase the ServiceNow request",l:"work",k:"followup",s:"waiting",r:"RITM0042345",n:-2,u:4,g:["servicenow"],x:"Raised, no movement. Ping the queue owner."},
+ {t:"Close the thread with Archit",l:"work",k:"followup",s:"waiting",w:"Archit",n:2,u:3,x:"Waiting on Archit's reply to close this out."},
+ {t:"Concur report — publish to Rajesh",l:"work",k:"followup",s:"open",w:"Rajesh",n:-1,u:6},
+ {t:"Monthly call with Cyrus",l:"work",k:"followup",s:"ontrack",w:"Cyrus",n:9,u:21,c:30,x:"Standing monthly sync. Last one covered platform spend."},
+ {t:"Adithya — push this to PROD deployment",l:"work",k:"followup",s:"waiting",w:"Adithya",n:-4,u:2,x:"Code ready, waiting on deployment slot."},
+ {t:"Pulse cutover checklist → Alagar",l:"work",k:"followup",s:"ontrack",w:"Alagar",n:2,u:1,g:["sat-8aug","pulse"],x:"Checklist drafted. Hand over before Saturday cutover."},
+ {t:"Hand over Report Studio agent to RMG team",l:"work",k:"followup",s:"open",w:"RMG",n:2,u:5,g:["sat-8aug"]},
+ {t:"Week off issue — find the root cause",l:"work",k:"analyse",s:"blocked",n:0,u:8,x:"Reported again this week. Need to reproduce."},
+
+ {t:"Pulse Azure migration — completion",l:"work",k:"develop",s:"ontrack",n:2,u:1,g:["pulse","sat-8aug"],x:"BI owners repointing to the data lake before cutover."},
+ {t:"Logic Apps move",l:"work",k:"develop",s:"offtrack",u:12,x:"Slipped. Nothing moved this sprint — needs a new date."},
+ {t:"Mobile app integration",l:"work",k:"develop",s:"offtrack",u:16,x:"Off track. No owner assigned yet."},
+ {t:"Involuntary exits flows",l:"work",k:"develop",s:"ontrack",u:5},
+ {t:"On-prem AD",l:"work",k:"develop",s:"ontrack",u:7},
+ {t:"CRM agent",l:"work",k:"develop",s:"ontrack",u:4},
+ {t:"Comp agent",l:"work",k:"develop",s:"ontrack",u:6},
+ {t:"Campaign release",l:"work",k:"develop",s:"ontrack",u:3},
+ {t:"Data purging work",l:"work",k:"develop",s:"ontrack",n:2,u:5,g:["sat-8aug"]},
+ {t:"Nexi — new joiners flow",l:"work",k:"develop",s:"ontrack",n:2,u:2,g:["sat-8aug"]},
+ {t:"Cockpit generation (CEO / CFO)",l:"work",k:"develop",s:"ontrack",u:4,x:"Design review done with Mosesraj."},
+ {t:"Attendance — Details Employee Wise PROD",l:"work",k:"develop",s:"open",n:2,u:9,g:["sat-8aug"]},
+ {t:"Variable pay",l:"work",k:"develop",s:"open",n:2,u:9,g:["sat-8aug"]},
+ {t:"WFO tracking",l:"work",k:"develop",s:"open",n:2,u:9,g:["sat-8aug"]},
+ {t:"Attendance module",l:"work",k:"develop",s:"open",n:2,u:9,g:["sat-8aug"]},
+ {t:"All apps under WAF",l:"work",k:"roadmap",s:"open",u:14,x:"Every app should sit behind the WAF. Needs an inventory first."},
+ {t:"Security architecture and road map",l:"work",k:"roadmap",s:"open",w:"Mosesraj",u:11,x:"Methodology first, tooling later. Pilot the framework in Excel."},
+ {t:"IT dashboard — go for the big launch",l:"work",k:"develop",s:"open",u:18},
+
+ {t:"Frontier tuning model",l:"map",k:"roadmap",s:"open",w:"Mosesraj",u:6,x:"From Microsoft Cloud & AI Innovation Day. Flag as a 2026–27 roadmap item."},
+ {t:"Host one application via Fabric as the backend",l:"map",k:"roadmap",s:"open",u:13},
+ {t:"MCP from Fabric",l:"map",k:"roadmap",s:"open",u:13},
+ {t:"Semantic models for generating cost queries",l:"map",k:"roadmap",s:"open",u:15},
+ {t:"One central solution: observability + App Insights + pipelines + jobs + Azure cost",l:"map",k:"roadmap",s:"open",u:17,x:"Single pane for the whole estate. Azure cost folded in."},
+ {t:"OLTP vs OLAP — settle the position",l:"map",k:"analyse",s:"open",u:24},
+ {t:"Latency — bring it down",l:"map",k:"analyse",s:"open",u:19},
+ {t:"Plan agent in Fabric → build the demo",l:"map",k:"roadmap",s:"open",u:10},
+ {t:"Candidate search → Devesh Agarwal (confirm the name)",l:"map",k:"followup",s:"open",u:20},
+ {t:"AI deck builder",l:"map",k:"roadmap",s:"open",u:26},
+ {t:"Podcast generated from the work-week notes",l:"map",k:"roadmap",s:"open",u:22,x:"Feed the weekly digest into it — the notes already exist."},
+ {t:"Credo card mobile apps",l:"map",k:"develop",s:"open",u:29},
+
+ {t:"Authorization via Azure AD employee groups",l:"learn",k:"learn",s:"open",u:34},
+ {t:"Patterns in hosting infrastructure",l:"learn",k:"learn",s:"open",u:34},
+ {t:"How AWS works",l:"learn",k:"learn",s:"open",u:41},
+ {t:"Hot partition",l:"learn",k:"learn",s:"open",u:41},
+ {t:"Cosmos DB",l:"learn",k:"learn",s:"open",u:47},
+
+ {t:"Blog: App Insights — alerts and monitors",l:"write",k:"develop",s:"open",u:28},
+ {t:"Blog: add files via API to a Foundry agent, make it dynamic",l:"write",k:"develop",s:"open",u:23,x:"Strongest one of the set — I have working code for this."},
+ {t:"Blog: campaign portal — Graph and the benefits",l:"write",k:"develop",s:"open",u:31},
+ {t:"Blog: WAF",l:"write",k:"develop",s:"open",u:31},
+ {t:"Blog: Front Door",l:"write",k:"develop",s:"open",u:31},
+ {t:"Blog: PMS (process)",l:"write",k:"develop",s:"open",u:37},
+ {t:"Blog: follow-up framework (process)",l:"write",k:"develop",s:"open",u:37},
+ {t:"Blog: vacation view (process)",l:"write",k:"develop",s:"open",u:37},
+
+ {t:"Term insurance — medicals, MWP nomination, free-look",l:"self",k:"followup",s:"ontrack",n:4,u:3,x:"Policy bought through Policybazaar. Full disclosure at the medical. MWP has to be elected at issuance."},
+ {t:"SIP investment — decide: mutual funds vs SIP",l:"self",k:"analyse",s:"open",u:12,x:"Note to self: invest in mutual funds, not only SIP."},
+ {t:"NPS",l:"self",k:"analyse",s:"open",u:25},
+ {t:"Credit card points — actually redeem them",l:"self",k:"followup",s:"open",u:33},
+ {t:"Zaggle",l:"self",k:"followup",s:"open",u:33},
+ {t:"Helena — finance podcast",l:"self",k:"develop",s:"open",u:30}
+];
+
+/* ---------- model ---------- */
+let DB=Store.read();
+function slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60);}
+function uid(){return Math.random().toString(36).slice(2,9);}
+function seed(){
+  const now=Date.now();
+  const threads=SEED.map(s=>{
+    const created=new Date(now-(s.u+9)*DAY).toISOString();
+    const log=[{ts:created,kind:"open",text:"Captured from the running note."}];
+    if(s.x)log.unshift({ts:new Date(now-s.u*DAY).toISOString(),kind:"note",text:s.x});
+    return{
+      id:uid(),title:s.t,lane:s.l,kind:s.k,status:s.s,who:s.w||"",ref:s.r||"",
+      next:(s.n===undefined||s.n===null)?"":shift(s.n),cadence:s.c||0,tags:s.g||[],
+      notes:"",created,updated:new Date(now-s.u*DAY).toISOString(),arch:false,log
+    };
+  });
+  return{v:1,threads,touched:new Date().toISOString()};
+}
+if(!DB||!DB.threads){DB=seed();Store.write(DB);}
+let afterSave=null;
+const save=()=>{DB.touched=new Date().toISOString();Store.write(DB);if(afterSave)afterSave();};
+const byId=id=>DB.threads.find(t=>t.id===id);
+
+function log(t,kind,text,extra){
+  t.log.unshift(Object.assign({ts:new Date().toISOString(),kind,text},extra||{}));
+  t.updated=new Date().toISOString();
+}
+function quietDays(t){return sinceDays(t.updated);}
+function isLive(t){return !t.arch&&t.status!=="done";}
+function overdue(t){return isLive(t)&&t.next&&dayDiff(TODAY(),t.next)<0;}
+function dueSoon(t){const g=t.next?dayDiff(TODAY(),t.next):null;return isLive(t)&&g!==null&&g>=0&&g<=7;}
+function goneQuiet(t){return isLive(t)&&quietDays(t)>=QUIET&&!overdue(t)&&!dueSoon(t);}
+function waitingOn(t){return isLive(t)&&t.who&&(t.status==="waiting"||t.kind==="followup");}
+
+/* ---------- capture parser ---------- */
+const LANE_ALIAS={work:"work",office:"work",roadmap:"map",map:"map",learn:"learn",learning:"learn",
+  write:"write",writing:"write",blog:"write",personal:"self",self:"self",money:"self",home:"self"};
+function parseDate(tok){
+  const s=tok.toLowerCase();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  if(s==="today")return TODAY();
+  if(s==="tom"||s==="tomorrow")return shift(1);
+  let m=s.match(/^\+?(\d+)([dwm])?$/);
+  if(m)return shift(+m[1]*(m[2]==="w"?7:m[2]==="m"?30:1));
+  const i=WD.findIndex(w=>w.toLowerCase()===s.slice(0,3));
+  if(i>=0){let g=(i-midnight().getDay()+7)%7;return shift(g===0?7:g);}
+  return "";
+}
+function parseCapture(raw){
+  let s=" "+raw.trim();
+  const o={lane:"work",kind:"followup",who:"",next:"",cadence:0,tags:[],ref:""};
+  s=s.replace(/\s@([A-Za-z][\w.-]*)/g,(m,a)=>{o.who=a[0].toUpperCase()+a.slice(1);return " ";});
+  s=s.replace(/\s#([A-Za-z][\w-]*)/g,(m,a)=>{const L=LANE_ALIAS[a.toLowerCase()];L?o.lane=L:o.tags.push(a.toLowerCase());return " ";});
+  s=s.replace(/\s\/([A-Za-z]+)/g,(m,a)=>{const k=a.toLowerCase();if(KINDS[k])o.kind=k;return " ";});
+  s=s.replace(/\s~(\d+)([dwm])?/g,(m,a,b)=>{o.cadence=+a*(b==="w"?7:b==="m"?30:1);return " ";});
+  s=s.replace(/\s!(\S+)/g,(m,a)=>{const d=parseDate(a);if(d)o.next=d;return " ";});
+  const rf=s.match(/\b((?:RITM|INC|REQ|CHG|TASK|AB)\d{4,})\b/i);
+  if(rf)o.ref=rf[1].toUpperCase();
+  o.title=s.replace(/\s+/g," ").trim();
+  if(o.cadence&&!o.next)o.next=shift(o.cadence);
+  if(o.who&&o.kind==="followup")o.status="waiting"; else o.status="open";
+  return o;
+}
+function create(raw){
+  const p=parseCapture(raw);
+  if(!p.title)return null;
+  const t=Object.assign({id:uid(),notes:"",created:new Date().toISOString(),updated:new Date().toISOString(),arch:false,log:[]},p);
+  log(t,"open","Thread opened.");
+  DB.threads.unshift(t);save();
+  return t;
+}
+
+/* ---------- state ---------- */
+let view={mode:"radar",arg:""},sel=null,sort="quiet",railOpen=false;
+try{railOpen=localStorage.getItem("loop.more")==="1";}catch(e){}
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function menu(anchor,items){
+  closeMenu();
+  const el=document.createElement("div");el.className="menu";el.id="menu";
+  el.innerHTML=items.map((it,i)=>it.sep?`<div class="msep"></div>`:it.note?`<div class="mnote">${it.note}</div>`
+    :`<button data-i="${i}">${it.label}</button>`).join("");
+  document.body.appendChild(el);
+  const r=anchor.getBoundingClientRect(),w=el.offsetWidth,h=el.offsetHeight;
+  el.style.left=Math.max(8,Math.min(r.right-w,innerWidth-w-8))+"px";
+  el.style.top=(r.bottom+h+8>innerHeight?Math.max(8,r.top-h-6):r.bottom+6)+"px";
+  el.querySelectorAll("button").forEach(b=>b.onclick=()=>{const it=items[+b.dataset.i];closeMenu();if(it.fn)it.fn();});
+  setTimeout(()=>document.addEventListener("mousedown",outsideMenu),0);
+}
+function outsideMenu(e){if(!e.target.closest("#menu"))closeMenu();}
+function closeMenu(){const m=document.getElementById("menu");if(m)m.remove();document.removeEventListener("mousedown",outsideMenu);}
+function toast(m){const el=$("#toast");el.textContent=m;el.classList.add("on");clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove("on"),2100);}
+
+/* ---------- rail ---------- */
+function renderRail(){
+  const live=DB.threads.filter(isLive);
+  const nOver=live.filter(overdue).length, nSoon=live.filter(dueSoon).length,
+        nQuiet=live.filter(goneQuiet).length, nWait=live.filter(waitingOn).length;
+  const item=(m,a,label,count,dot,alert)=>
+    `<button class="nav${alert&&count?" alert":""}" data-view="${m}" data-arg="${a}" aria-current="${view.mode===m&&view.arg===a}">
+      ${dot?`<span class="dot" style="background:${dot}"></span>`:""}<span>${label}</span><span class="n">${count}</span></button>`;
+  let h=`<h6>Focus</h6>
+    ${item("radar","","Radar",nOver+nSoon+nQuiet,"",true)}
+    ${item("over","","Overdue",nOver,"",true)}
+    ${item("quiet","","Gone quiet",nQuiet,"",true)}
+    ${item("people","","With people",nWait,"")}
+    <h6>Lanes</h6>`;
+  for(const k in LANES)h+=item("lane",k,LANES[k],live.filter(t=>t.lane===k).length,"");
+  h+=`<button class="more" id="railMore" aria-expanded="${railOpen}"><i>&#9654;</i>More</button>`;
+  if(railOpen){
+    h+=`<h6>Status</h6>`;
+    ["ontrack","offtrack","blocked","waiting","open"].forEach(s=>
+      h+=item("status",s,STATUS[s].label,live.filter(t=>t.status===s).length,STATUS[s].c));
+    h+=`<h6>Everything</h6>
+      ${item("all","","All threads",live.length,"")}
+      ${item("journal","","Journal",DB.threads.reduce((n,t)=>n+t.log.length,0),"")}
+      ${item("done","","Closed",DB.threads.filter(t=>t.status==="done"&&!t.arch).length,STATUS.done.c)}
+      ${item("arch","","Archive",DB.threads.filter(t=>t.arch).length,"")}`;
+  }
+  h+=`<div class="creed"><p>“Fool with a tool is still a fool.”</p><span>PINNED · YOUR LINE</span></div>`;
+  $("#rail").innerHTML=h;
+  $("#rail").querySelectorAll(".nav").forEach(b=>b.onclick=()=>{view={mode:b.dataset.view,arg:b.dataset.arg};render();});
+  $("#railMore").onclick=()=>{railOpen=!railOpen;try{localStorage.setItem("loop.more",railOpen?"1":"0");}catch(e){}renderRail();};
+}
+
+/* ---------- row ---------- */
+function rowHTML(t){
+  const q=quietDays(t), pct=Math.min(100,Math.round(q/45*100));
+  const cls=q>=35?"cold":q>=QUIET?"warm":"";
+  const d=dueLabel(t.next);
+  const last=t.log[0]?t.log[0].text.split("\n")[0]:"";
+  const meta=[LANES[t.lane]];
+  return `<button class="row${sel===t.id?" sel":""}${t.status==="done"?" done":""}" data-id="${t.id}">
+    <span class="spine" style="background:${STATUS[t.status].c}"></span>
+    <span class="t">
+      <h3>${esc(t.title)}</h3>
+      <span class="meta">${meta.join(" · ")}
+        ${t.who?`· <span class="who">@${esc(t.who)}</span>`:""}
+        ${t.ref?`· <span class="ref">${esc(t.ref)}</span>`:""}
+        ${t.cadence?`· ~${t.cadence}d`:""}
+        ${last?`· <em>${esc(last.slice(0,80))}</em>`:""}</span>
+    </span>
+    <span class="rt">
+      ${d.txt?`<span class="due ${d.cls}">${d.txt}</span>`:""}
+      <span class="quiet ${cls}" title="${q} days since the last update">
+        <span class="bar"><i style="width:${pct}%"></i></span><span class="d">${q}d</span></span>
+    </span></button>`;
+}
+function listHTML(arr){
+  if(!arr.length)return `<div class="empty"><p>Clear here.</p><span>NOTHING WAITING IN THIS VIEW</span></div>`;
+  return `<div class="rows">${arr.map(rowHTML).join("")}</div>`;
+}
+function group(title,arr,urgent){
+  if(!arr.length)return "";
+  return `<div class="gh${urgent?" urgent":""}"><b>${title}</b><span class="n">${arr.length}</span><span class="line"></span></div>${listHTML(arr)}`;
+}
+const bySort=a=>a.slice().sort((x,y)=>{
+  if(sort==="quiet")return quietDays(y)-quietDays(x);
+  if(sort==="due"){const A=x.next||"9999",B=y.next||"9999";return A<B?-1:A>B?1:0;}
+  return new Date(y.updated)-new Date(x.updated);
+});
+
+/* ---------- main ---------- */
+function render(){
+  renderRail();
+  const live=DB.threads.filter(isLive);
+  const m=view.mode; let head="",body="";
+  const segs=`<div class="seg">
+      <button data-sort="quiet" aria-pressed="${sort==="quiet"}">Quietest</button>
+      <button data-sort="due" aria-pressed="${sort==="due"}">By date</button></div>`;
+
+  if(m==="radar"){
+    const over=bySort(live.filter(overdue)), soon=bySort(live.filter(dueSoon)),
+          quiet=bySort(live.filter(goneQuiet)), wait=bySort(live.filter(t=>waitingOn(t)&&!overdue(t)&&!dueSoon(t)&&!goneQuiet(t)));
+    const holding=live.filter(waitingOn).length;
+    head=`<h1>Radar</h1><p><span style="color:var(--ochre);font-weight:600">${over.length+soon.length}</span> need you this week ·
+      ${quiet.length} gone quiet · ${holding} sitting with someone else · ${live.length} open in total</p><span class="sp"></span>${segs}`;
+    body=group("Overdue",over,true)+group("Next seven days",soon,true)
+        +group("Gone quiet · "+QUIET+" days or more",quiet)+group("Waiting on someone",wait);
+    if(!body)body=`<div class="empty"><p>Everything is current.</p><span>NOTHING OVERDUE, NOTHING QUIET</span></div>`;
+  }
+  else if(m==="over"||m==="quiet"){
+    const arr=bySort(live.filter(m==="over"?overdue:goneQuiet));
+    head=`<h1>${m==="over"?"Overdue":"Gone quiet"}</h1><p>${m==="over"?"Past the date you set.":"No update in "+QUIET+"+ days. These are the ones that disappear."}</p><span class="sp"></span>${segs}`;
+    body=listHTML(arr);
+  }
+  else if(m==="lane"){
+    const arr=live.filter(t=>t.lane===view.arg);
+    head=`<h1>${LANES[view.arg]}</h1><p>${arr.length} open</p><span class="sp"></span>${segs}`;
+    body=["offtrack","blocked","waiting","ontrack","open"].map(s=>group(STATUS[s].label,bySort(arr.filter(t=>t.status===s)),s==="offtrack"||s==="blocked")).join("");
+  }
+  else if(m==="status"){
+    const arr=bySort(live.filter(t=>t.status===view.arg));
+    head=`<h1>${STATUS[view.arg].label}</h1><p>${arr.length} threads</p><span class="sp"></span>${segs}`;
+    body=listHTML(arr);
+  }
+  else if(m==="all"){
+    head=`<h1>All threads</h1><p>${live.length} open · sorted by silence</p><span class="sp"></span>${segs}`;
+    body=listHTML(bySort(live));
+  }
+  else if(m==="done"||m==="arch"){
+    const arr=DB.threads.filter(t=>m==="done"?(t.status==="done"&&!t.arch):t.arch)
+      .sort((a,b)=>new Date(b.updated)-new Date(a.updated));
+    head=`<h1>${m==="done"?"Closed":"Archive"}</h1><p>${arr.length} threads · the log stays with them</p>`;
+    body=listHTML(arr);
+  }
+  else if(m==="people"){
+    const map={};
+    live.filter(t=>t.who).forEach(t=>(map[t.who]=map[t.who]||[]).push(t));
+    const names=Object.keys(map).sort((a,b)=>map[b].length-map[a].length);
+    head=`<h1>People</h1><p>Open this before a 1:1 — everything that person is holding, in one block.</p>`;
+    body=names.length?names.map(n=>`<div class="pcard">
+        <header><span class="av">${esc(n.slice(0,2).toUpperCase())}</span><b>${esc(n)}</b><span class="n">${map[n].length} open</span></header>
+        ${listHTML(bySort(map[n]))}</div>`).join("")
+      :`<div class="empty"><p>No one is holding anything.</p><span>ADD @NAME WHEN YOU CAPTURE</span></div>`;
+  }
+  else if(m==="journal"){
+    const ents=[];
+    DB.threads.forEach(t=>t.log.forEach(l=>ents.push({t,l})));
+    ents.sort((a,b)=>new Date(b.l.ts)-new Date(a.l.ts));
+    const days={};
+    ents.slice(0,300).forEach(e=>{const d=e.l.ts.slice(0,10);(days[d]=days[d]||[]).push(e);});
+    head=`<h1>Journal</h1><p>Every update ever written, newest first. This is the raw material for the weekly digest.</p>`;
+    body=Object.keys(days).sort().reverse().map(d=>{
+      const dt=new Date(d+"T00:00:00");
+      return `<div class="jday"><div class="when">${WD[dt.getDay()]}<em>${shortDate(d)}</em></div><div>${
+        days[d].map(e=>`<div class="jent"><span class="tick${e.l.kind==="status"?" st":""}">${e.l.kind==="status"?"◆":"●"}</span>
+          <span class="b"><b data-id="${e.t.id}">${esc(e.t.title)}</b><p>${esc(e.l.text)}</p></span></div>`).join("")
+      }</div></div>`;}).join("");
+  }
+  $("#main").innerHTML=`<div class="head">${head}</div><div class="group">${body}</div>`;
+  $("#main").querySelectorAll(".row").forEach(r=>r.onclick=()=>open(r.dataset.id));
+  $("#main").querySelectorAll(".jent b").forEach(b=>b.onclick=()=>open(b.dataset.id));
+  $("#main").querySelectorAll("[data-sort]").forEach(b=>b.onclick=()=>{sort=b.dataset.sort;render();});
+  if(sel)renderDrawer();
+}
+
+/* ---------- drawer ---------- */
+function open(id){sel=id;$("#split").classList.add("open");render();renderDrawer();
+  setTimeout(()=>{const c=$("#compose");if(c&&window.innerWidth>1080)c.focus();},60);}
+function close(){sel=null;$("#split").classList.remove("open");render();}
+function renderDrawer(){
+  const t=byId(sel);if(!t){close();return;}
+  const opts=(obj,cur)=>Object.keys(obj).map(k=>`<option value="${k}"${k===cur?" selected":""}>${obj[k].label||obj[k]}</option>`).join("");
+  const q=quietDays(t),d=dueLabel(t.next);
+  $("#drawer").innerHTML=`
+    <div class="dhead">
+      <div class="top"><h2 id="dtitle" contenteditable="plaintext-only" spellcheck="false">${esc(t.title)}</h2>
+        <button class="x" id="dclose" title="Close">✕</button></div>
+      <dl class="facts">
+        <dt>Status</dt><dd><select class="pick" id="fStatus">${opts(STATUS,t.status)}</select></dd>
+        <dt>Lane</dt><dd><select class="pick" id="fLane">${opts(LANES,t.lane)}</select>
+          <select class="pick" id="fKind" style="margin-left:4px">${opts(KINDS,t.kind)}</select></dd>
+        <dt>Next by</dt><dd style="display:flex;gap:6px;align-items:center">
+          <input type="date" class="fld mono" id="fNext" value="${t.next||""}" style="width:150px">
+          ${d.txt?`<span class="due ${d.cls}">${d.txt}</span>`:""}</dd>
+        <dt>With</dt><dd><input class="fld" id="fWho" value="${esc(t.who)}" placeholder="nobody — it's on you"></dd>
+        <dt>Ref</dt><dd><input class="fld mono" id="fRef" value="${esc(t.ref)}" placeholder="RITM… / link / ticket"></dd>
+        <dt>Repeats</dt><dd><input class="fld mono" id="fCad" value="${t.cadence||""}" placeholder="e.g. 30" style="width:150px"></dd>
+      </dl>
+    </div>
+    <div class="acts">
+      <button class="abtn go" id="aDone">${t.status==="done"?"Reopen":"Mark done"}</button>
+      <button class="abtn" id="aSnooze">Push a week</button>
+      <button class="abtn" id="aStep">Next step</button>
+      <button class="abtn" id="aMore">&#8943;</button>
+    </div>
+    <div class="compose">
+      <textarea id="compose" placeholder="What happened? One line is enough — ⌘↵ to file it."></textarea>
+      <div class="under"><small>${q===0?"UPDATED TODAY":"LAST TOUCHED "+q+"D AGO"}</small><span class="sp"></span>
+        <button class="post" id="aPost">Log update</button></div>
+    </div>
+    <div class="compose" style="border-bottom:1px solid var(--rule)">
+      <textarea id="dnotes" style="min-height:46px" placeholder="Standing notes — context, links, decisions. Edits here sync both ways with Obsidian.">${esc(t.notes||"")}</textarea>
+      <div class="under"><small>NOTES · SAME FILE, ABOVE THE LEDGER</small></div>
+    </div>
+    <div class="ledger">
+      <div class="cap"><b>Ledger · ${t.log.length}</b><span class="line"></span><b style="color:var(--chalk-4)">APPEND ONLY</b></div>
+      ${t.log.map(l=>{const s=stamp(l.ts);return `<div class="ent${l.kind==="status"?" st":""}">
+        <div class="stamp">${s.t}<em>${s.d}</em></div>
+        <div class="body"><p>${esc(l.text)}</p></div></div>`;}).join("")}
+    </div>`;
+
+  const on=(s,fn,ev)=>{const el=$(s);if(el)el[ev||"onclick"]=fn;};
+  const set=(f,v,note)=>{if(t[f]===v)return;t[f]=v;if(note)log(t,"status",note);else t.updated=new Date().toISOString();save();render();renderDrawer();};
+  $("#dclose").onclick=close;
+  $("#dtitle").onblur=e=>{const v=e.target.textContent.trim();if(v&&v!==t.title){log(t,"note","Renamed from “"+t.title+"”.");t.title=v;save();render();}};
+  $("#fStatus").onchange=e=>{const to=e.target.value;log(t,"status","Status → "+STATUS[to].label+".");t.status=to;
+    if(to==="done"&&!t.next)t.next="";save();render();renderDrawer();};
+  $("#fLane").onchange=e=>set("lane",e.target.value);
+  $("#fKind").onchange=e=>set("kind",e.target.value);
+  $("#fNext").onchange=e=>{t.next=e.target.value;log(t,"status",e.target.value?"Next check-in set for "+shortDate(e.target.value)+".":"Date cleared.");save();render();renderDrawer();};
+  $("#fWho").onchange=e=>{const v=e.target.value.trim();log(t,"status",v?"Now with "+v+".":"No longer with anyone.");t.who=v;save();render();renderDrawer();};
+  $("#fRef").onchange=e=>set("ref",e.target.value.trim());
+  $("#fCad").onchange=e=>{const v=parseInt(e.target.value,10)||0;t.cadence=v;log(t,"status",v?"Repeats every "+v+" days.":"Stopped repeating.");save();render();renderDrawer();};
+  $("#aPost").onclick=post;
+  $("#compose").onkeydown=e=>{if((e.metaKey||e.ctrlKey)&&e.key==="Enter")post();};
+  $("#aDone").onclick=()=>{
+    if(t.status==="done"){t.status="open";log(t,"status","Reopened.");}
+    else{log(t,"status","Closed.");t.status="done";t.next="";}
+    save();render();renderDrawer();toast(t.status==="done"?"Closed — the ledger stays":"Reopened");};
+  $("#aSnooze").onclick=()=>{const b=t.next&&dayDiff(TODAY(),t.next)>0?t.next:TODAY();
+    t.next=iso(new Date(new Date(b+"T00:00:00").getTime()+7*DAY));log(t,"status","Pushed to "+shortDate(t.next)+".");save();render();renderDrawer();};
+  $("#aMore").onclick=e=>menu(e.currentTarget,[
+    {label:"Due today",fn:()=>{t.next=TODAY();log(t,"status","Pulled to today.");save();render();renderDrawer();}},
+    {label:"Copy as markdown",fn:()=>{copy(threadMD(t));toast("Copied");}},
+    {sep:1},
+    {label:t.arch?"Restore from archive":"Archive this thread",fn:()=>doArch()}]);
+  function doArch(){t.arch=!t.arch;log(t,"status",t.arch?"Archived.":"Restored from archive.");save();
+    toast(t.arch?"Archived — still in the vault":"Restored");if(t.arch)close();else{render();renderDrawer();}}
+  $("#aStep").onclick=()=>AI.step(t);
+  $("#dnotes").onchange=e=>{const v=e.target.value;if(v!==(t.notes||"")){t.notes=v;t.updated=new Date().toISOString();save();toast("Notes saved");}};
+
+  function post(){
+    const el=$("#compose"),v=el.value.trim();if(!v)return;
+    log(t,"note",v);
+    if(t.cadence){t.next=shift(t.cadence);log(t,"status","Next check-in in "+t.cadence+" days — "+shortDate(t.next)+".");}
+    save();render();renderDrawer();
+    setTimeout(()=>{const c=$("#compose");if(c)c.focus();},40);
+    toast("Filed"+(t.cadence?" · next check-in "+shortDate(t.next):""));
+  }
+}
+
+/* ---------- markdown / vault ---------- */
+function localStamp(is){const d=new Date(is);
+  return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+" "+pad(d.getHours())+":"+pad(d.getMinutes());}
+function threadMD(t){
+  const fm=["---","loop-id: "+t.id,"title: "+JSON.stringify(t.title),"lane: "+t.lane,"type: "+t.kind,
+    "status: "+t.status,"with: "+(t.who||""),"ref: "+(t.ref||""),"next: "+(t.next||""),
+    "repeats: "+(t.cadence||0),"tags: ["+(t.tags||[]).concat(t.lane).join(", ")+"]",
+    "created: "+t.created.slice(0,10),"updated: "+localStamp(t.updated),
+    "archived: "+(t.arch?"true":"false"),"---"].join("\n");
+  const body=["\n# "+t.title,"",
+    "**Status** "+STATUS[t.status].label+(t.who?" · **With** "+t.who:"")+(t.next?" · **Next** "+t.next:"")+(t.ref?" · **Ref** "+t.ref:""),
+    "","## Notes","",(t.notes||"").trim(),"","## Log",""].join("\n");
+  const log=t.log.map(l=>"- `"+localStamp(l.ts)+"` "+(l.kind==="status"?"◆ ":"")+l.text.replace(/\n+/g," ")).join("\n");
+  return fm+body+log+"\n";
+}
+function indexMD(){
+  const live=DB.threads.filter(isLive);
+  const row=t=>"| ["+t.title.replace(/[|\[\]]/g,"")+"](<"+slug(t.title)+".md>) | "+STATUS[t.status].label+" | "+(t.who||"—")+" | "+(t.next||"—")+" | "+quietDays(t)+"d |";
+  const tbl=arr=>arr.length?["| Thread | Status | With | Next | Quiet |","| --- | --- | --- | --- | --- |"].concat(arr.map(row)).join("\n"):"_nothing here_";
+  return ["---","title: Loop index","updated: "+TODAY(),"---","","# Loop","","_Generated "+new Date().toLocaleString()+" · "+live.length+" open threads_","",
+    "```dataview","TABLE status, with, next, updated FROM \"Loop\" WHERE status != \"done\" SORT updated ASC","```","",
+    "## Overdue","",tbl(live.filter(overdue)),"","## Next seven days","",tbl(live.filter(dueSoon)),
+    "","## Gone quiet","",tbl(live.filter(goneQuiet)),"","## Everything open","",tbl(live),""].join("\n");
+}
+function dl(name,text,type){
+  const b=new Blob([text],{type:type||"text/plain;charset=utf-8"}),u=URL.createObjectURL(b);
+  const a=document.createElement("a");a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),3000);
+}
+function copy(text){
+  if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(text).catch(()=>fb());else fb();
+  function fb(){const ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.opacity=0;
+    document.body.appendChild(ta);ta.select();try{document.execCommand("copy");}catch(e){}ta.remove();}
+}
+async function writeVault(){
+  if(!window.showDirectoryPicker){toast("This browser can't write folders — downloading instead");return dlBundle();}
+  try{
+    const root=await window.showDirectoryPicker({mode:"readwrite",id:"loopvault"});
+    const dir=await root.getDirectoryHandle("Loop",{create:true});
+    const put=async(name,text)=>{const fh=await dir.getFileHandle(name,{create:true});const w=await fh.createWritable();await w.write(text);await w.close();};
+    for(const t of DB.threads)await put(slug(t.title)+".md",threadMD(t));
+    await put("_Loop index.md",indexMD());
+    await put("_backup.json",JSON.stringify(DB,null,1));
+    toast("Wrote "+(DB.threads.length+2)+" files into /Loop");
+  }catch(e){if(e.name!=="AbortError")toast("Couldn't write: "+e.message);}
+}
+function dlBundle(){
+  const all=DB.threads.map(threadMD).join("\n\n---8<---\n\n");
+  dl("Loop-vault-"+TODAY()+".md",indexMD()+"\n\n"+all,"text/markdown");
+  dl("loop-backup-"+TODAY()+".json",JSON.stringify(DB,null,1),"application/json");
+}
+function icsFile(){
+  const pad2=n=>String(n).padStart(2,"0");
+  const evs=DB.threads.filter(t=>isLive(t)&&t.next).map(t=>{
+    const d=t.next.replace(/-/g,""),e=new Date(new Date(t.next+"T00:00:00").getTime()+DAY);
+    const de=e.getFullYear()+pad2(e.getMonth()+1)+pad2(e.getDate());
+    return ["BEGIN:VEVENT","UID:loop-"+t.id+"@local","DTSTAMP:"+new Date().toISOString().replace(/[-:.]/g,"").slice(0,15)+"Z",
+      "DTSTART;VALUE=DATE:"+d,"DTEND;VALUE=DATE:"+de,
+      "SUMMARY:Loop · "+t.title.replace(/[,;\\]/g,""),
+      "DESCRIPTION:"+[STATUS[t.status].label,t.who?"with "+t.who:"",t.ref].filter(Boolean).join(" — ").replace(/[,;\\]/g,""),
+      "BEGIN:VALARM","TRIGGER:-PT9H","ACTION:DISPLAY","DESCRIPTION:Loop follow-up","END:VALARM","END:VEVENT"].join("\r\n");
+  });
+  if(!evs.length){toast("No dated threads to export");return;}
+  dl("loop-followups.ics",["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Loop//EN","CALSCALE:GREGORIAN"].concat(evs).concat(["END:VCALENDAR"]).join("\r\n"),"text/calendar");
+  toast(evs.length+" follow-ups exported to calendar");
+}
+function digestMD(days){
+  const cut=Date.now()-days*DAY,out=[];
+  const moved=DB.threads.filter(t=>t.log.some(l=>new Date(l.ts)>cut));
+  out.push("# Week of "+shortDate(shift(-days))+" – "+shortDate(TODAY()),"");
+  const closed=DB.threads.filter(t=>t.status==="done"&&new Date(t.updated)>cut);
+  if(closed.length){out.push("## Closed","");closed.forEach(t=>out.push("- "+t.title));out.push("");}
+  out.push("## Moved","");
+  moved.filter(t=>t.status!=="done").forEach(t=>{
+    out.push("### "+t.title+"  \n`"+STATUS[t.status].label+(t.who?" · with "+t.who:"")+(t.next?" · next "+t.next:"")+"`");
+    t.log.filter(l=>new Date(l.ts)>cut).forEach(l=>out.push("- "+(l.kind==="status"?"**":"")+l.text+(l.kind==="status"?"**":"")));
+    out.push("");
+  });
+  const quiet=DB.threads.filter(t=>isLive(t)&&goneQuiet(t));
+  if(quiet.length){out.push("## Went quiet — decide: pick up or drop","");quiet.forEach(t=>out.push("- "+t.title+" _("+quietDays(t)+"d)_"));out.push("");}
+  const due=DB.threads.filter(t=>isLive(t)&&t.next&&dayDiff(TODAY(),t.next)<=7).sort((a,b)=>a.next<b.next?-1:1);
+  if(due.length){out.push("## Next seven days","");due.forEach(t=>out.push("- **"+t.next+"** "+t.title+(t.who?" — "+t.who:"")));}
+  return out.join("\n");
+}
+
+/* ---------- sheets ---------- */
+function sheet(title,inner,footer){
+  $("#sheet").innerHTML=`<header><b>${title}</b><button class="x" data-close>✕</button></header>
+    <div class="in">${inner}</div>${footer?`<footer>${footer}</footer>`:""}`;
+  $("#veil").classList.add("on");
+  $("#sheet").querySelectorAll("[data-close]").forEach(b=>b.onclick=closeSheet);
+}
+function closeSheet(){$("#veil").classList.remove("on");}
+$("#veil").onclick=e=>{if(e.target.id==="veil")closeSheet();};
+
+$("#btnDigest").onclick=()=>{
+  const md=digestMD(7);
+  sheet("Last seven days",`<p>Everything that moved, in your own words.</p>
+    ${AI.ready()?`<div class="rowbtns" style="margin-bottom:14px">
+      <button class="abtn go" data-tone="a status mail to a director, plain and factual, no adjectives, grouped by workstream, flag slippage honestly">Write it as a status mail</button>
+      <button class="abtn" data-tone="a LinkedIn post about one technical thing that moved, first person, specific, no hashtags, no hype">As a LinkedIn post</button>
+      <button class="abtn" data-tone="a two-minute spoken podcast script reviewing the week, conversational, first person">As a podcast script</button></div>
+      <div id="wOut"></div>`:""}
+    <pre id="dg">${esc(md)}</pre>`,
+    `<button class="abtn" id="dgDl">Download .md</button><button class="abtn go" id="dgCp">Copy</button>`);
+  $("#dgCp").onclick=()=>{copy(md);toast("Copied");};
+  $("#dgDl").onclick=()=>dl("loop-digest-"+TODAY()+".md",md,"text/markdown");
+  $("#sheet").querySelectorAll("[data-tone]").forEach(b=>b.onclick=async()=>{
+    const out=$("#wOut");$("#dg").style.display="none";
+    out.innerHTML='<p class="aiout"><span class="spin"></span>Writing\u2026</p>';
+    try{
+      const r=await AI.chat("You write as a technical lead in India \u2014 direct, concrete, no corporate filler, no exclamation marks. Use only what is in the notes. Produce "+b.dataset.tone+".",md);
+      out.innerHTML=`<div class="aiout">${esc(r.text)}</div>
+        <div class="rowbtns" style="margin-top:12px"><button class="abtn go" id="wCp">Copy this</button>
+        <button class="abtn" id="wRaw">Show the raw notes</button></div>`;
+      $("#wCp").onclick=()=>{copy(r.text);toast("Copied");};
+      $("#wRaw").onclick=()=>{$("#dg").style.display="";};
+    }catch(e){out.innerHTML=`<p class="aiout" style="color:var(--rust)">${esc(e.message)}</p>`;}
+  });
+};
+$("#btnVault").onclick=()=>{
+  sheet("Vault",`
+    <button class="opt" id="vObs"><span class="ico">◧</span><span><b>Sync into an Obsidian vault folder</b>
+      <span>Pick your vault once. Every thread is written as its own markdown note with YAML frontmatter and the full log — readable, searchable, git-able, and yours even if this file disappears.</span></span></button>
+    <button class="opt" id="vMd"><span class="ico">↓</span><span><b>Download the whole vault</b>
+      <span>One markdown bundle plus a JSON backup. Use this if the folder picker isn't available.</span></span></button>
+    <button class="opt" id="vIcs"><span class="ico">◷</span><span><b>Send follow-up dates to your calendar</b>
+      <span>An .ics with every dated thread and a reminder the morning it's due. Double-click it and it lands in Calendar.</span></span></button>
+    <button class="opt" id="vJson"><span class="ico">{ }</span><span><b>Export JSON</b><span>Exact state, for moving machines.</span></span></button>
+    <button class="opt" id="vImp"><span class="ico">↑</span><span><b>Import JSON</b><span>Merges by title — existing threads keep their ledger, new ones get added. Nothing is overwritten.</span></span></button>
+    <p style="margin-top:14px;color:var(--chalk-4);font-size:12px">Last saved ${new Date(DB.touched).toLocaleString()} · ${DB.threads.length} threads · ${DB.threads.reduce((n,t)=>n+t.log.length,0)} log entries</p>`);
+  $("#vObs").onclick=()=>{closeSheet();writeVault();};
+  $("#vMd").onclick=()=>{closeSheet();dlBundle();toast("Vault downloaded");};
+  if($("#vPhone"))$("#vPhone").onclick=()=>{closeSheet();phoneSheet();};
+  $("#vIcs").onclick=()=>{closeSheet();icsFile();};
+  $("#vJson").onclick=()=>{closeSheet();dl("loop-"+TODAY()+".json",JSON.stringify(DB,null,1),"application/json");};
+  $("#vImp").onclick=()=>{
+    const i=document.createElement("input");i.type="file";i.accept=".json";
+    i.onchange=()=>{const f=i.files[0];if(!f)return;const r=new FileReader();
+      r.onload=()=>{try{
+        const inc=JSON.parse(r.result);let add=0,merge=0;
+        (inc.threads||[]).forEach(n=>{
+          const ex=DB.threads.find(t=>t.title.toLowerCase()===n.title.toLowerCase());
+          if(!ex){DB.threads.push(n);add++;}
+          else{const seen=new Set(ex.log.map(l=>l.ts+l.text));
+            n.log.forEach(l=>{if(!seen.has(l.ts+l.text))ex.log.push(l);});
+            ex.log.sort((a,b)=>new Date(b.ts)-new Date(a.ts));merge++;}
+        });
+        save();closeSheet();render();toast(add+" added · "+merge+" merged");
+      }catch(e){toast("Couldn't read that file");}};
+      r.readAsText(f);};
+    i.click();};
+};
+function phoneSheet(){
+  sheet("Capture from your phone",`
+  <p>The vault is the database, so your phone only needs to reach one file: <b>Loop/_inbox.md</b>. Type a line, forget it. Loop picks it up on the Mac and files it.</p>
+  <p><b>1 · Get the vault on your phone.</b> Install Obsidian from the App Store and open the same vault. If your vault sits in iCloud Drive it's already there — pick it under Open folder as vault.</p>
+  <p><b>2 · Star the inbox note.</b> Open <b>Loop/_inbox.md</b>, tap the three dots, Star it. Now it's two taps from the Obsidian home screen.</p>
+  <p><b>3 · Type one line per idea.</b> Same shorthand as here:</p>
+  <pre>ask archit about the WAF inventory @archit !mon
+cosmos db hot partition — learn properly #learn
+zaggle claim before month end #self !28</pre>
+  <p><b>4 · Skip opening the app entirely.</b> In Shortcuts, make one action — <b>Append to Text File</b>, pointing at that inbox file — and add it to your home screen or run it with Siri. Then it's “Hey Siri, loop”, speak the idea, done, even on the beach.</p>
+  <p><b>5 · Back on the Mac</b>, open Loop. Anything you typed becomes a thread and you get a count. The raw lines are also copied to <b>_inbox archive.md</b>, so nothing you said to your phone is ever lost.</p>
+  <p class="note">Reading a line does not need the AI key — this is plain text parsing and works with no internet at all.</p>`,
+  `<button class="abtn go" data-close>Got it</button>`);
+  $("#sheet").querySelectorAll("[data-close]").forEach(b=>b.onclick=closeSheet);
+}
+$("#btnHelp").onclick=()=>sheet("How this works",`
+  <p><b>Three moves, that's the whole thing.</b> Type in the top bar and press Enter. Click a row and write what happened. Press 1 to see what needs you. Everything else is optional.</p>
+  <p><b>Capture fast.</b> Type into the bar at the top and hit Enter. It reads shorthand:<br>
+  <span class="mono" style="color:var(--chalk-3);font-size:12px">chase invoice @rajesh #work !fri /followup</span><br>
+  <span class="mono" style="color:var(--chalk-3);font-size:12px">monthly sync @cyrus ~30d</span> — repeats every 30 days, the date rolls forward each time you log an update.</p>
+  <p><b>Nothing is ever deleted.</b> Updates append to a ledger. You can't edit or remove an entry — status changes, date pushes and renames all get written in too. Archive hides a thread; it keeps the ledger.</p>
+  <p><b>Silence is the signal.</b> Every row shows days since the last update. At ${QUIET} days a thread turns amber and surfaces itself in <b>Gone quiet</b> — that's the failure mode of a notes file, made visible.</p>
+  <p><b>People view</b> groups everything by who is holding it. Open it before a 1:1.</p>
+  <p><b>On your phone</b> — with GitHub sync on, add the page to your home screen and capture straight into the app. See <b>⋯ → Laptop and phone</b>.</p>
+  <p><b>Keys</b> — <span class="mono">c</span> capture · <span class="mono">1</span> radar · <span class="mono">t</span> theme · <span class="mono">⌘↵</span> file an update · <span class="mono">Esc</span> close.</p>
+  <p><b>Where it lives</b> — <b>⋯ → Where my data lives</b>. A private GitHub repo syncs laptop and phone and gives every save its own commit. An Obsidian folder keeps it as markdown on this Mac. Either way the browser holds a copy, so it works offline.</p>
+  <p><b>AI</b> — add your own GPT-4o-mini key under <b>AI → Key</b>. It's held in this browser only, never written into the vault. Nothing calls out until you add it.</p>`);
+
+/* ---------- look ---------- */
+const THEMES={ink:["Ink","#0E1114","#1B212A","#E2A03F","#77A46B"],
+  paper:["Paper","#F6F4EF","#E4DFD5","#A76A10","#4C7742"],
+  nocturne:["Nocturne","#0A0E16","#182031","#6ECFDD","#5CB18F"]};
+function theme(name,quiet){
+  if(name==="system")name=matchMedia("(prefers-color-scheme: light)").matches?"paper":"ink";
+  document.documentElement.dataset.theme=name;
+  try{localStorage.setItem("loop.theme",name);}catch(e){}
+  if(!quiet)toast(THEMES[name][0]);
+}
+(function(){let t="ink";try{t=localStorage.getItem("loop.theme")||"ink";}catch(e){}theme(t,true);})();
+function lookSheet(){
+  const cur=document.documentElement.dataset.theme;
+  sheet("Look",`<p>Pick a theme. It sticks on this machine.</p>
+    <div class="swatch">${Object.keys(THEMES).map(k=>{const[n,a,b,c,d]=THEMES[k];
+      return `<button class="sw" data-t="${k}" aria-pressed="${cur===k}"><b>${n}</b>
+        <span class="strip"><i style="background:${a}"></i><i style="background:${b}"></i><i style="background:${c}"></i><i style="background:${d}"></i></span></button>`;}).join("")}</div>
+    <button class="opt" id="thSys"><span class="ico">◑</span><span><b>Match the Mac</b>
+      <span>Light in the day, dark at night — follows System Settings.</span></span></button>
+    <p class="note">Press <b>t</b> anywhere to cycle themes.</p>`);
+  $("#sheet").querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{theme(b.dataset.t);lookSheet();});
+  $("#thSys").onclick=()=>{theme("system");closeSheet();};
+}
+
+/* ---------- capture bar ---------- */
+const capIn=$("#capIn");
+capIn.onfocus=()=>$("#cap").classList.add("on");
+capIn.onblur=()=>setTimeout(()=>$("#cap").classList.remove("on"),120);
+capIn.onkeydown=e=>{
+  if(e.key==="Enter"){
+    const t=create(capIn.value);
+    if(t){capIn.value="";view={mode:"all",arg:""};sort="touch";open(t.id);toast("Filed — "+LANES[t.lane].toLowerCase()+(t.next?" · "+dueLabel(t.next).txt:""));}
+  }
+  if(e.key==="Escape")capIn.blur();
+};
+document.addEventListener("keydown",e=>{
+  const typing=/INPUT|TEXTAREA/.test(e.target.tagName)||e.target.isContentEditable;
+  if(e.key==="Escape"){if(document.getElementById("menu"))closeMenu();else if($("#veil").classList.contains("on"))closeSheet();else if(sel)close();return;}
+  if(typing)return;
+  if(e.key==="c"||e.key==="/"){e.preventDefault();capIn.focus();}
+  if(e.key==="t"){const k=Object.keys(THEMES),i=k.indexOf(document.documentElement.dataset.theme);theme(k[(i+1)%k.length]);}
+  const map={"1":["radar",""],"2":["quiet",""],"3":["people",""],"4":["journal",""]};
+  if(map[e.key]){view={mode:map[e.key][0],arg:map[e.key][1]};render();}
+});
+
+/* ---------- storage banner ---------- */
+if(!Store.live){
+  $("#storeBanner").innerHTML=`<div class="banner"><b>Preview mode.</b>
+    This window can't save to disk, so changes vanish on refresh. Download the file and open it from your Mac — then it remembers.
+    <button id="bnDl">How to keep it</button></div>`;
+  $("#bnDl").onclick=()=>$("#btnHelp").click();
+}
+
+/* ============================================================
+   Vault — the Obsidian folder is the database.
+   One markdown note per thread. Reconnects itself between sessions.
+   ============================================================ */
+const INBOX_HEAD="# Loop inbox\n\n> Type one idea per line, anywhere below. Next time Loop opens on the Mac, each line becomes a thread and this file is emptied.\n> Shorthand works the same as the app: @person   #work   !fri   ~30d\n> Lines starting with # or > are ignored, so leave these instructions alone.\n\n";
+const idb={
+  open(){return new Promise((res,rej)=>{try{const r=indexedDB.open("loop-fs",1);
+    r.onupgradeneeded=()=>r.result.createObjectStore("h");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);}catch(e){rej(e);}});},
+  async get(k){try{const db=await this.open();return await new Promise(res=>{const q=db.transaction("h").objectStore("h").get(k);
+    q.onsuccess=()=>res(q.result);q.onerror=()=>res(null);});}catch(e){return null;}},
+  async set(k,v){try{const db=await this.open();return await new Promise(res=>{const q=db.transaction("h","readwrite").objectStore("h").put(v,k);
+    q.onsuccess=()=>res(1);q.onerror=()=>res(0);});}catch(e){return 0;}}
+};
+
+function parseMD(txt){
+  const m=txt.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if(!m)return null;
+  const fm={};
+  m[1].split(/\r?\n/).forEach(l=>{
+    const i=l.indexOf(":");if(i<1)return;
+    let k=l.slice(0,i).trim(),v=l.slice(i+1).trim();
+    if(v.startsWith('"')){try{v=JSON.parse(v);}catch(e){v=v.replace(/^"|"$/g,"");}}
+    fm[k]=v;
+  });
+  if(!fm.title)return null;
+  const rest=txt.slice(m[0].length);
+  const notes=(rest.match(/\n##[ \t]+Notes[ \t]*\r?\n([\s\S]*?)(?=\r?\n##[ \t]|$)/)||[,""])[1].trim();
+  const logBlk=(rest.match(/\n##[ \t]+Log[ \t]*\r?\n([\s\S]*)$/)||[,""])[1];
+  const log=[];
+  logBlk.split(/\r?\n/).forEach(l=>{
+    const e=l.match(/^\s*[-*]\s+`([^`]+)`\s*(◆)?\s*(.*)$/);
+    if(!e)return;
+    const d=new Date(e[1].trim().replace(" ","T"));
+    if(isNaN(d))return;
+    log.push({ts:d.toISOString(),kind:e[2]?"status":"note",text:(e[3]||"").trim()});
+  });
+  log.sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+  const lane=LANES[fm.lane]?fm.lane:"work";
+  const tags=(fm.tags||"").replace(/^\[|\]$/g,"").split(",").map(s=>s.trim()).filter(s=>s&&s!==lane);
+  const upd=log[0]?log[0].ts:new Date((fm.updated||fm.created||TODAY()).replace(" ","T")).toISOString();
+  return{
+    id:fm["loop-id"]||uid(),title:fm.title,lane,kind:KINDS[fm.type]?fm.type:"followup",
+    status:STATUS[fm.status]?fm.status:"open",who:fm.with||"",ref:fm.ref||"",
+    next:/^\d{4}-\d{2}-\d{2}$/.test(fm.next||"")?fm.next:"",cadence:parseInt(fm.repeats,10)||0,
+    tags,notes,arch:fm.archived==="true",
+    created:new Date((fm.created||TODAY())+"T00:00:00").toISOString(),updated:upd,
+    log:log.length?log:[{ts:upd,kind:"open",text:"Imported from the vault."}]
+  };
+}
+
+const Vault={
+  root:null,dir:null,name:"",last:null,busy:false,timer:null,
+  supported:typeof window.showDirectoryPicker==="function",
+
+  async boot(){
+    if(!this.supported){this.chip();return;}
+    const h=await idb.get("root");
+    if(!h){this.chip();return;}
+    this.root=h;this.name=h.name||"vault";
+    let perm="prompt";
+    try{perm=await h.queryPermission({mode:"readwrite"});}catch(e){perm="prompt";}
+    if(perm==="granted"){await this.attach();await this.pull(true);}
+    else{this.needsGesture=true;}
+    this.chip();
+  },
+  async connect(){
+    if(!this.supported){toast("This browser can't open folders — use Chrome, or the download option");return;}
+    try{
+      const root=await window.showDirectoryPicker({mode:"readwrite",id:"loopvault",startIn:"documents"});
+      this.root=root;this.name=root.name;await idb.set("root",root);
+      this.needsGesture=false;
+      await this.attach();
+      const found=await this.pull(true);
+      await this.push(true);
+      toast(found?("Linked to "+this.name+" · pulled "+found+" notes"):("Linked to "+this.name+" · wrote "+DB.threads.length+" notes"));
+    }catch(e){if(e.name!=="AbortError")toast("Couldn't link: "+e.message);}
+    this.chip();
+  },
+  async reconnect(){
+    if(!this.root)return this.connect();
+    try{
+      const perm=await this.root.requestPermission({mode:"readwrite"});
+      if(perm!=="granted"){toast("Permission declined");return;}
+      this.needsGesture=false;await this.attach();await this.pull(true);this.chip();toast("Vault reconnected");
+    }catch(e){toast("Couldn't reconnect — link it again");this.root=null;this.chip();}
+  },
+  async attach(){
+    this.dir=await this.root.getDirectoryHandle("Loop",{create:true});
+    try{const fh=await this.dir.getFileHandle("_inbox.md",{create:true});
+      if((await fh.getFile()).size<10){const w=await fh.createWritable();await w.write(INBOX_HEAD);await w.close();}
+    }catch(e){}
+  },
+  async eatInbox(){
+    if(!this.ready())return 0;
+    let made=0;
+    try{
+      const fh=await this.dir.getFileHandle("_inbox.md",{create:true});
+      const txt=await(await fh.getFile()).text();
+      const lines=txt.split(/\r?\n/).map(s=>s.trim())
+        .filter(s=>s&&!s.startsWith("#")&&!s.startsWith(">")&&!/^[-*]?\s*$/.test(s))
+        .map(s=>s.replace(/^[-*]\s+/,"").replace(/^\[[ x]\]\s*/i,""));
+      if(!lines.length)return 0;
+      lines.forEach(l=>{
+        const t=create(l);
+        if(t){t.log[0].text="Captured on mobile \u2014 \u201c"+l+"\u201d";made++;}
+      });
+      const w=await fh.createWritable();await w.write(INBOX_HEAD);await w.close();
+      const ah=await this.dir.getFileHandle("_inbox archive.md",{create:true});
+      const prev=await(await ah.getFile()).text();
+      const aw=await ah.createWritable();
+      await aw.write((prev||"# Inbox archive\n\n_Nothing typed on the phone is ever thrown away._\n")
+        +"\n## "+localStamp(new Date().toISOString())+"\n"+lines.map(l=>"- "+l).join("\n")+"\n");
+      await aw.close();
+      save();
+    }catch(e){}
+    return made;
+  },
+  ready(){return !!this.dir&&!this.needsGesture;},
+
+  async pull(quiet){
+    if(!this.ready())return 0;
+    this.busy=true;this.chip();
+    let n=0;const found=[];
+    try{
+      for await(const e of this.dir.values()){
+        if(e.kind!=="file"||!e.name.endsWith(".md")||e.name.startsWith("_"))continue;
+        try{const t=parseMD(await(await e.getFile()).text());if(t){found.push(t);n++;}}catch(err){}
+      }
+      this.merge(found);
+      const fromPhone=await this.eatInbox();
+      if(fromPhone)setTimeout(()=>toast(fromPhone+" idea"+(fromPhone===1?"":"s")+" came in from your phone"),700);
+      this.last=new Date();
+    }catch(e){if(!quiet)toast("Pull failed: "+e.message);}
+    this.busy=false;save();render();this.chip();
+    return n;
+  },
+  merge(list){
+    const key=l=>l.ts.slice(0,16)+"|"+l.text;
+    list.forEach(v=>{
+      const ex=DB.threads.find(t=>t.id===v.id)||DB.threads.find(t=>t.title.toLowerCase()===v.title.toLowerCase());
+      if(!ex){DB.threads.push(v);return;}
+      const seen=new Set(ex.log.map(key));
+      v.log.forEach(l=>{if(!seen.has(key(l)))ex.log.push(l);});
+      ex.log.sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+      if(new Date(v.updated)>=new Date(ex.updated))
+        ["title","lane","kind","status","who","ref","next","cadence","tags","notes","arch"].forEach(f=>{if(v[f]!==undefined)ex[f]=v[f];});
+      ex.updated=ex.log[0]?ex.log[0].ts:ex.updated;
+      ex.id=ex.id||v.id;
+    });
+  },
+  async push(all){
+    if(!this.ready())return;
+    this.busy=true;this.chip();
+    DB.written=DB.written||{};
+    try{
+      const put=async(name,text)=>{const fh=await this.dir.getFileHandle(name,{create:true});
+        const w=await fh.createWritable();await w.write(text);await w.close();};
+      let n=0;
+      for(const t of DB.threads){
+        const sig=localStamp(t.updated)+"|"+t.log.length+"|"+t.status;
+        if(!all&&DB.written[t.id]===sig)continue;
+        await put(slug(t.title)+".md",threadMD(t));DB.written[t.id]=sig;n++;
+      }
+      await put("_Loop index.md",indexMD());
+      this.last=new Date();Store.write(DB);
+      if(n&&!all)this.flash=n;
+    }catch(e){toast("Write failed: "+e.message);}
+    this.busy=false;this.chip();
+  },
+  schedule(){
+    if(!this.ready())return;
+    clearTimeout(this.timer);
+    this.timer=setTimeout(()=>this.push(false),900);
+  },
+  chip(){
+    const c=$("#chipVault"),t=$("#chipTxt");if(!c)return;
+    c.className="chip";
+    if(this.busy){c.classList.add("busy");t.textContent="syncing";c.title="Writing to "+this.name;return;}
+    if(this.ready()){c.classList.add("on");t.textContent=this.name;
+      c.title="Obsidian: "+this.name+"/Loop"+(this.last?" · last sync "+pad(this.last.getHours())+":"+pad(this.last.getMinutes()):"");return;}
+    if(this.needsGesture){c.classList.add("warn");t.textContent="reconnect";c.title="Click to restore access to "+this.name;return;}
+    c.classList.add("warn");t.textContent="no vault";c.title="Not linked to an Obsidian vault yet";
+  }
+};
+afterSave=()=>Vault.schedule();
+$("#chipVault").onclick=()=>{
+  if(Vault.needsGesture)return Vault.reconnect();
+  if(!Vault.ready())return $("#btnVault").click();
+  Vault.push(true).then(()=>toast("Pushed "+DB.threads.length+" notes to "+Vault.name));
+};
+
+/* ============================================================
+   AI — your key, your endpoint. Nothing fires until you add it.
+   ============================================================ */
+const AI={
+  cfg:{provider:"openai",key:"",model:"gpt-4o-mini",endpoint:"",deployment:"gpt-4o-mini",version:"2024-10-21"},
+  load(){try{const s=JSON.parse(localStorage.getItem("loop.ai")||"null");if(s)Object.assign(this.cfg,s);}catch(e){}},
+  store(){try{localStorage.setItem("loop.ai",JSON.stringify(this.cfg));}catch(e){toast("Can't save the key in this window");}},
+  ready(){return !!this.cfg.key&&(this.cfg.provider==="openai"||!!this.cfg.endpoint)},
+  forget(){this.cfg.key="";this.store();toast("Key cleared from this browser");},
+
+  async chat(system,user,json){
+    if(!this.ready()){aiSheet("keys");throw new Error("no key");}
+    const az=this.cfg.provider==="azure";
+    const base=(this.cfg.endpoint||"").replace(/\/+$/,"");
+    const url=az?base+"/openai/deployments/"+encodeURIComponent(this.cfg.deployment)+"/chat/completions?api-version="+encodeURIComponent(this.cfg.version)
+              :"https://api.openai.com/v1/chat/completions";
+    const headers=az?{"Content-Type":"application/json","api-key":this.cfg.key}
+                    :{"Content-Type":"application/json","Authorization":"Bearer "+this.cfg.key};
+    const body={messages:[{role:"system",content:system},{role:"user",content:user}],temperature:0.2};
+    if(!az)body.model=this.cfg.model;
+    if(json)body.response_format={type:"json_object"};
+    let r;
+    try{r=await fetch(url,{method:"POST",headers,body:JSON.stringify(body)});}
+    catch(e){throw new Error("Couldn't reach the endpoint. If you opened this file directly, the browser blocks the call — serve the folder over http (python3 -m http.server) or point this at your APIM proxy.");}
+    const txt=await r.text();
+    if(!r.ok){let m=txt;try{m=JSON.parse(txt).error.message;}catch(e){}throw new Error(r.status+" — "+m);}
+    let d;try{d=JSON.parse(txt);}catch(e){throw new Error("Unexpected reply from the endpoint");}
+    const c=d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content;
+    if(!c)throw new Error("Empty reply");
+    return{text:c,usage:d.usage||{}};
+  },
+
+  brief(t){return t.map(x=>"["+x.id+"] "+x.title+" | "+STATUS[x.status].label+" | "+LANES[x.lane]
+    +" | "+(x.who?"with "+x.who:"on me")+" | next "+(x.next||"none")+" | silent "+quietDays(x)+"d"
+    +" | last: "+((x.log[0]||{}).text||"").slice(0,110)).join("\n");},
+  deep(t,cap){let s="",i=0;
+    for(const x of t){
+      const blk="## "+x.title+" ("+STATUS[x.status].label+(x.who?", with "+x.who:"")+(x.next?", next "+x.next:"")+")\n"
+        +(x.notes?x.notes.slice(0,300)+"\n":"")
+        +x.log.slice(0,4).map(l=>"- "+localStamp(l.ts)+" "+l.text.slice(0,200)).join("\n")+"\n\n";
+      if(s.length+blk.length>cap)break;s+=blk;i++;}
+    return s;},
+
+  async step(t){
+    if(!this.ready()){aiSheet("keys");return;}
+    sheet("Next step · "+t.title.slice(0,44),`<p class="aiout"><span class="spin"></span>Reading the ledger…</p>`);
+    try{
+      const r=await this.chat(
+        "You advise a busy engineering lead in India. Read one thread's history and propose the single next action. Be concrete and short. No preamble, no bullet lists longer than 3 items, no filler. If the thread has stalled, say what to do about the person holding it. Today is "+TODAY()+".",
+        "Thread: "+t.title+"\nStatus: "+STATUS[t.status].label+(t.who?"\nWith: "+t.who:"")+(t.next?"\nNext date: "+t.next:"")
+        +"\nSilent for: "+quietDays(t)+" days\n"+(t.notes?"Notes: "+t.notes+"\n":"")
+        +"\nLedger, newest first:\n"+t.log.slice(0,10).map(l=>"- "+localStamp(l.ts)+" "+l.text).join("\n")
+        +"\n\nGive: (1) the next action in one sentence, (2) a suggested follow-up date, (3) one line you could send to the person if someone else is holding it.");
+      sheet("Next step · "+t.title.slice(0,44),`<div class="aiout">${esc(r.text)}</div>
+        <p class="note">This is a suggestion, not a ledger entry. Nothing was written to your log.</p>`,
+        `<button class="abtn" data-close>Discard</button><button class="abtn go" id="stLog">Log it as a note</button>`);
+      $("#stLog").onclick=()=>{log(t,"note","AI suggestion — "+r.text.trim());save();render();renderDrawer();closeSheet();toast("Filed to the ledger");};
+      $("#sheet").querySelectorAll("[data-close]").forEach(b=>b.onclick=closeSheet);
+    }catch(e){if(e.message!=="no key")sheet("Next step",`<p class="aiout" style="color:var(--rust)">${esc(e.message)}</p>`);}
+  }
+};
+AI.load();
+
+/* ---------- AI sheet ---------- */
+let aiTab="brief";
+function aiSheet(tab){
+  aiTab=tab||aiTab;
+  const tabs=[["brief","Today's brief"],["dump","Sort a dump"],["ask","Ask the ledger"],["keys","Key"]];
+  sheet("GPT-4o-mini",`<div class="tabs">${tabs.map(([k,l])=>
+    `<button data-tab="${k}" aria-pressed="${aiTab===k}">${l}</button>`).join("")}</div><div id="aiPane"></div>`);
+  $("#sheet").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>aiSheet(b.dataset.tab));
+  $("#sheet").querySelectorAll("[data-close]").forEach(b=>b.onclick=closeSheet);
+  const pane=$("#aiPane");
+  const gate=()=>{pane.innerHTML=`<p class="note"><b>Add your key first.</b> It stays in this browser and goes only to the endpoint you name below.</p>`;
+    setTimeout(()=>aiSheet("keys"),450);};
+
+  if(aiTab==="keys"){
+    const c=AI.cfg,az=c.provider==="azure";
+    pane.innerHTML=`
+      <dl class="kv">
+        <dt>Endpoint</dt><dd><div class="rowbtns">
+          <button class="abtn ${az?"":"go"}" data-prov="openai">OpenAI</button>
+          <button class="abtn ${az?"go":""}" data-prov="azure">Azure / Foundry</button></div></dd>
+        <dt>API key</dt><dd><input class="fld mono" id="kKey" type="password" autocomplete="off" spellcheck="false"
+          placeholder="${c.key?"•••••••••••••••• saved":"paste it here — never in a chat window"}" value=""></dd>
+        ${az?`<dt>Resource URL</dt><dd><input class="fld mono" id="kEnd" value="${esc(c.endpoint)}" placeholder="https://your-resource.openai.azure.com"></dd>
+        <dt>Deployment</dt><dd><input class="fld mono" id="kDep" value="${esc(c.deployment)}" placeholder="gpt-4o-mini"></dd>
+        <dt>API version</dt><dd><input class="fld mono" id="kVer" value="${esc(c.version)}"></dd>`
+        :`<dt>Model</dt><dd><input class="fld mono" id="kMod" value="${esc(c.model)}"></dd>`}
+      </dl>
+      <p class="note"><b>Where the key lives:</b> this browser's local storage on this machine only. It is never written into the vault,
+      never put in a file you'd commit, and sent to nothing except the endpoint above. Clear it any time.<br><br>
+      <b>If calls fail with a network error:</b> a page opened as a <b>file://</b> can't post to these APIs. Serve the folder instead —
+      <b>python3 -m http.server</b> in the folder, then open localhost:8000/loop.html. Or front it with your APIM gateway and put that URL in Resource URL.</p>
+      <div class="rowbtns"><button class="abtn go" id="kSave">Save key</button>
+        <button class="abtn" id="kTest">Test it</button>
+        ${c.key?`<button class="abtn" id="kWipe">Forget the key</button>`:""}
+        <span id="kMsg" class="mono" style="font-size:11.5px;color:var(--chalk-4);line-height:28px"></span></div>`;
+    pane.querySelectorAll("[data-prov]").forEach(b=>b.onclick=()=>{AI.cfg.provider=b.dataset.prov;AI.store();aiSheet("keys");});
+    $("#kSave").onclick=()=>{
+      const k=$("#kKey").value.trim();if(k)AI.cfg.key=k;
+      if($("#kMod"))AI.cfg.model=$("#kMod").value.trim()||"gpt-4o-mini";
+      if($("#kEnd"))AI.cfg.endpoint=$("#kEnd").value.trim();
+      if($("#kDep"))AI.cfg.deployment=$("#kDep").value.trim()||"gpt-4o-mini";
+      if($("#kVer"))AI.cfg.version=$("#kVer").value.trim()||"2024-10-21";
+      AI.store();$("#kKey").value="";$("#kMsg").textContent="saved locally";toast("Key saved in this browser only");
+      setTimeout(()=>aiSheet("keys"),300);
+    };
+    $("#kTest").onclick=async()=>{
+      const m=$("#kMsg");m.innerHTML='<span class="spin"></span>testing';
+      try{const r=await AI.chat("Reply with the single word: ready.","ping");
+        m.textContent="✓ "+r.text.trim().slice(0,20)+" · "+(r.usage.total_tokens||"?")+" tokens";m.style.color="var(--moss)";}
+      catch(e){m.textContent="✕ "+e.message.slice(0,90);m.style.color="var(--rust)";}
+    };
+    if($("#kWipe"))$("#kWipe").onclick=()=>{AI.forget();aiSheet("keys");};
+    return;
+  }
+
+  if(!AI.ready())return gate();
+
+  if(aiTab==="brief"){
+    const live=DB.threads.filter(isLive);
+    pane.innerHTML=`<p>Reads all ${live.length} open threads — status, who's holding it, how long it's been silent — and tells you where to spend today.</p>
+      <div class="rowbtns"><button class="abtn go" id="bGo">Write the brief</button></div><div id="bOut" style="margin-top:16px"></div>`;
+    $("#bGo").onclick=async()=>{
+      const out=$("#bOut");out.innerHTML='<p class="aiout"><span class="spin"></span>Reading 57 threads…</p>';
+      try{
+        const r=await AI.chat(
+          "You are chief of staff to a technical lead who runs platform, integration and AI work for a services company in India. He has 25 reports. Today is "+TODAY()+
+          ". You are given his open threads. Produce, in plain text, no markdown headers: FIRST five things to do today, each one line, each with a short reason drawn from the data (a date passed, someone is sitting on it, it has been silent for N days). SECOND, three threads to kill or hand off, with who to hand to if the data says. THIRD, one sentence on the biggest risk hiding in this list. Be blunt. Never invent facts that are not in the data.",
+          AI.brief(live));
+        out.innerHTML=`<div class="aiout">${esc(r.text)}</div>
+          <p class="note">${r.usage.total_tokens||"?"} tokens · roughly ₹${(((r.usage.total_tokens||0)/1e6)*0.6*88).toFixed(3)} at 4o-mini rates</p>`;
+      }catch(e){out.innerHTML=`<p class="aiout" style="color:var(--rust)">${esc(e.message)}</p>`;}
+    };
+    return;
+  }
+
+  if(aiTab==="dump"){
+    pane.innerHTML=`<p>Paste a raw note — the kind you actually write. It comes back as threads with a lane, a type, who's holding it and a date. Tick what you want and file it. Nothing is added until you press the button.</p>
+      <textarea id="dIn" placeholder="follow up with archit on the WAF thread&#10;concur report to rajesh by friday&#10;cosmos db - hot partition, learn properly&#10;call cyrus monthly"></textarea>
+      <div class="rowbtns" style="margin-top:10px"><button class="abtn go" id="dGo">Sort it</button></div>
+      <div id="dOut" style="margin-top:16px"></div>`;
+    $("#dGo").onclick=async()=>{
+      const raw=$("#dIn").value.trim();if(!raw)return;
+      const out=$("#dOut");out.innerHTML='<p class="aiout"><span class="spin"></span>Sorting…</p>';
+      try{
+        const r=await AI.chat(
+          'Turn a messy personal note into tracked threads. Return JSON only: {"threads":[{"title":"","lane":"work|map|learn|write|self","type":"followup|develop|analyse|roadmap|learn","status":"open|ontrack|offtrack|blocked|waiting","with":"","next":"YYYY-MM-DD or empty","repeats":0,"tags":[]}]}. '+
+          'Rules: one entry per distinct thing to follow up, build, analyse, learn or watch. Keep his own wording in the title, just tidy it. lane map means road map, self means personal or money, write means blogging. '+
+          'If a person is named as holding it, put the name in "with" and set status waiting. If the note says on track or off track, use ontrack or offtrack. Set repeats only when the note says monthly or weekly (30 or 7). '+
+          'Never invent a date that is not implied. Today is '+TODAY()+', a '+WD[midnight().getDay()]+'.',
+          raw,true);
+        let list=[];try{list=(JSON.parse(r.text).threads||[]);}catch(e){}
+        if(!list.length){out.innerHTML='<p class="aiout">Nothing came back that looked like a thread.</p>';return;}
+        const norm=s=>s.toLowerCase().replace(/[^a-z0-9 ]/g," ").split(/\s+/).filter(w=>w.length>3);
+        out.innerHTML=list.map((x,i)=>{
+          const w=norm(x.title||"");
+          const dup=DB.threads.find(t=>{const o=norm(t.title);const hit=w.filter(k=>o.includes(k)).length;
+            return w.length&&hit/w.length>=0.6;});
+          return `<label class="cand"><input type="checkbox" ${dup?"":"checked"} data-i="${i}">
+            <span><b>${esc(x.title||"untitled")}</b><span${dup?' class="dup"':''}>${
+              [LANES[x.lane]||"Work",KINDS[x.type]||"Follow-up",x.with?"@"+x.with:"",x.next||"",x.repeats?"~"+x.repeats+"d":"",
+               dup?"· looks like “"+dup.title.slice(0,34)+"”":""].filter(Boolean).join("  ·  ")}</span></span></label>`;
+        }).join("")+`<div class="rowbtns" style="margin-top:12px"><button class="abtn go" id="dFile">File the ticked ones</button>
+          <span class="mono" style="font-size:11px;color:var(--chalk-4);line-height:28px">${r.usage.total_tokens||"?"} tokens</span></div>`;
+        $("#dFile").onclick=()=>{
+          let n=0;
+          out.querySelectorAll("input:checked").forEach(cb=>{
+            const x=list[+cb.dataset.i];
+            const t={id:uid(),title:(x.title||"untitled").trim(),lane:LANES[x.lane]?x.lane:"work",kind:KINDS[x.type]?x.type:"followup",
+              status:STATUS[x.status]?x.status:"open",who:(x.with||"").trim(),ref:"",
+              next:/^\d{4}-\d{2}-\d{2}$/.test(x.next||"")?x.next:"",cadence:parseInt(x.repeats,10)||0,
+              tags:Array.isArray(x.tags)?x.tags:[],notes:"",arch:false,
+              created:new Date().toISOString(),updated:new Date().toISOString(),log:[]};
+            log(t,"open","Filed from a note dump.");DB.threads.unshift(t);n++;
+          });
+          save();closeSheet();view={mode:"all",arg:""};sort="touch";render();toast(n+" thread"+(n===1?"":"s")+" filed");
+        };
+      }catch(e){out.innerHTML=`<p class="aiout" style="color:var(--rust)">${esc(e.message)}</p>`;}
+    };
+    return;
+  }
+
+  if(aiTab==="ask"){
+    pane.innerHTML=`<p>Answers only from what's written in your ledger — notes, status changes, dates. If it isn't in there, it says so.</p>
+      <input class="fld" id="qIn" placeholder="what is pending with Mosesraj?" style="height:34px;line-height:32px;margin-bottom:10px">
+      <div class="rowbtns"><button class="abtn go" id="qGo">Ask</button>
+        <button class="abtn" data-q="What have I not touched in a month that still matters?">what's rotting?</button>
+        <button class="abtn" data-q="What is blocked on other people right now, and who do I chase first?">who do I chase?</button></div>
+      <div id="qOut" style="margin-top:16px"></div>`;
+    const go=async()=>{
+      const q=$("#qIn").value.trim();if(!q)return;
+      const out=$("#qOut");out.innerHTML='<p class="aiout"><span class="spin"></span>Reading the ledger…</p>';
+      try{
+        const r=await AI.chat(
+          "Answer strictly from the thread ledger given. Quote thread titles when you refer to them. If the ledger does not contain the answer, say exactly what is missing instead of guessing. Short, plain text. Today is "+TODAY()+".",
+          "Ledger:\n\n"+AI.deep(bySort(DB.threads.filter(isLive)),13000)+"\nQuestion: "+q);
+        out.innerHTML=`<div class="aiout">${esc(r.text)}</div><p class="note">${r.usage.total_tokens||"?"} tokens</p>`;
+      }catch(e){out.innerHTML=`<p class="aiout" style="color:var(--rust)">${esc(e.message)}</p>`;}
+    };
+    $("#qGo").onclick=go;
+    $("#qIn").onkeydown=e=>{if(e.key==="Enter")go();};
+    pane.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{$("#qIn").value=b.dataset.q;go();});
+    return;
+  }
+
+}
+$("#btnAI").onclick=()=>aiSheet(AI.ready()?"brief":"keys");
+$("#btnMore").onclick=e=>menu(e.currentTarget,[
+  {label:"Weekly digest",fn:()=>$("#btnDigest").click()},
+  {label:"Where my data lives",fn:storageSheet},
+  {label:"Laptop and phone",fn:devicesSheet},
+  {sep:1},
+  {label:"Look",fn:lookSheet},
+  {label:"How this works",fn:()=>$("#btnHelp").click()},
+  {note:"c capture &nbsp; 1 radar &nbsp; t theme"}]);
+
+/* ---------- vault sheet (replaces the export-only one) ---------- */
+$("#btnVault").onclick=()=>{
+  if(Sync.mode!=="obsidian")return storageSheet();
+  const on=Vault.ready();
+  sheet("Obsidian vault",`
+    <p>${on?`Linked to <b>${esc(Vault.name)}/Loop</b>. Every change writes itself into markdown within a second, and edits you make in Obsidian come back on load or on pull.`
+      :`Point this at your vault once. Each thread becomes its own note with YAML frontmatter, a Notes section you can write in freely, and the full append-only log. The markdown is the record — this app is just a lens on it.`}</p>
+    <button class="opt" id="vLink"><span class="ico">◧</span><span><b>${on?"Re-link to a different vault":"Link a vault folder"}</b>
+      <span>Creates <b>&lt;vault&gt;/Loop/</b> and remembers the folder between sessions, so it reconnects on its own.</span></span></button>
+    ${on?`<button class="opt" id="vPull"><span class="ico">↻</span><span><b>Pull from the vault now</b>
+      <span>Reads every note back in. Log entries are merged, never replaced — if you wrote a line in Obsidian it appears here.</span></span></button>
+    <button class="opt" id="vPush"><span class="ico">↑</span><span><b>Rewrite every note</b>
+      <span>Force a full write of all ${DB.threads.length} threads plus the index.</span></span></button>`:""}
+    ${on?`<button class="opt" id="vPhone"><span class="ico">□</span><span><b>Capture from your phone</b>
+      <span>Open <b>Loop/_inbox.md</b> in Obsidian on iOS and type one idea per line. It turns into threads the next time you open this on the Mac.</span></span></button>`:""}
+    <div class="rowbtns" style="margin-top:12px"><button class="abtn" id="vIcs">Send dates to Calendar</button>
+      <button class="abtn" id="vMd">Download a backup</button><button class="abtn" id="vImp">Restore a backup</button></div>
+    <p class="note">${Vault.supported?"":"<b>This browser can't write folders.</b> Chrome or Edge on your Mac can. "}
+      Saved locally ${new Date(DB.touched).toLocaleString()} · ${DB.threads.length} threads · ${DB.threads.reduce((n,t)=>n+t.log.length,0)} log entries${
+      Vault.last?" · vault synced "+Vault.last.toLocaleTimeString():""}</p>`);
+  $("#vLink").onclick=()=>{closeSheet();Vault.connect();};
+  if($("#vPull"))$("#vPull").onclick=async()=>{closeSheet();const n=await Vault.pull();toast("Pulled "+n+" notes from "+Vault.name);};
+  if($("#vPush"))$("#vPush").onclick=async()=>{closeSheet();await Vault.push(true);toast("Rewrote "+DB.threads.length+" notes");};
+  if($("#vPhone"))$("#vPhone").onclick=()=>{closeSheet();phoneSheet();};
+  $("#vIcs").onclick=()=>{closeSheet();icsFile();};
+  $("#vMd").onclick=()=>{closeSheet();dlBundle();toast("Downloaded");};
+  $("#vImp").onclick=()=>{
+    const i=document.createElement("input");i.type="file";i.accept=".json";
+    i.onchange=()=>{const f=i.files[0];if(!f)return;const r=new FileReader();
+      r.onload=()=>{try{const inc=JSON.parse(r.result);Vault.merge(inc.threads||[]);save();closeSheet();render();
+        toast("Merged "+(inc.threads||[]).length+" threads");}catch(e){toast("Couldn't read that file");}};
+      r.readAsText(f);};
+    i.click();};
+};
+
+/* ============================================================
+   Git — a private repo as the database. Every save is a commit.
+   Conflicts are resolved by union, so two devices can never
+   overwrite each other's updates.
+   ============================================================ */
+function b64e(str){
+  const b=new TextEncoder().encode(str);let s="";
+  for(let i=0;i<b.length;i+=8192)s+=String.fromCharCode.apply(null,b.subarray(i,i+8192));
+  return btoa(s);
+}
+function b64d(b){
+  const s=atob((b||"").replace(/\s/g,""));const a=new Uint8Array(s.length);
+  for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);
+  return new TextDecoder().decode(a);
+}
+
+const Git={
+  cfg:{owner:"",repo:"",branch:"main",path:"state.json",token:""},
+  sha:null,last:null,busy:false,timer:null,err:"",
+  load(){try{const s=JSON.parse(localStorage.getItem("loop.git")||"null");if(s)Object.assign(this.cfg,s);}catch(e){}},
+  store(){try{localStorage.setItem("loop.git",JSON.stringify(this.cfg));}catch(e){}},
+  ready(){return !!(this.cfg.owner&&this.cfg.repo&&this.cfg.token)},
+  forget(){this.cfg.token="";this.store();},
+
+  url(){return "https://api.github.com/repos/"+encodeURIComponent(this.cfg.owner)+"/"+
+    encodeURIComponent(this.cfg.repo)+"/contents/"+this.cfg.path.split("/").map(encodeURIComponent).join("/");},
+  head(){return{"Authorization":"Bearer "+this.cfg.token,"Accept":"application/vnd.github+json",
+    "X-GitHub-Api-Version":"2022-11-28","Content-Type":"application/json"};},
+
+  async check(){
+    const r=await fetch("https://api.github.com/repos/"+encodeURIComponent(this.cfg.owner)+"/"+encodeURIComponent(this.cfg.repo),{headers:this.head()});
+    if(r.status===404)throw new Error("Repo not found — check the owner/name, and that the token can see it");
+    if(r.status===401)throw new Error("Token rejected. Has it expired?");
+    if(r.status===403)throw new Error("Token has no access to this repo. Give it Contents: Read and write");
+    if(!r.ok)throw new Error("GitHub said "+r.status);
+    const d=await r.json();
+    if(!d.private)throw new Error("That repo is PUBLIC. Use a private one — your notes would be readable by anyone");
+    this.cfg.branch=d.default_branch||"main";this.store();
+    return d.full_name;
+  },
+
+  async read(){
+    const r=await fetch(this.url()+"?ref="+encodeURIComponent(this.cfg.branch)+"&t="+Date.now(),{headers:this.head()});
+    if(r.status===404)return null;
+    if(!r.ok)throw new Error("Read failed: "+r.status);
+    const d=await r.json();
+    this.sha=d.sha;
+    try{return JSON.parse(b64d(d.content));}catch(e){throw new Error("state.json in the repo isn't valid JSON");}
+  },
+
+  async pull(quiet){
+    if(!this.ready())return 0;
+    this.busy=true;renderChip();this.err="";
+    let n=0;
+    try{
+      const remote=await this.read();
+      if(remote&&remote.threads){
+        const before=DB.threads.length,lines=DB.threads.reduce((a,t)=>a+t.log.length,0);
+        Vault.merge(remote.threads);
+        n=DB.threads.length-before;
+        const gained=DB.threads.reduce((a,t)=>a+t.log.length,0)-lines;
+        if(!quiet&&(n||gained))toast(n?n+" new thread"+(n===1?"":"s")+" from GitHub":gained+" update"+(gained===1?"":"s")+" pulled in");
+        save();render();
+      }
+      this.last=new Date();
+    }catch(e){this.err=e.message;if(!quiet)toast(e.message);}
+    this.busy=false;renderChip();
+    return n;
+  },
+
+  async push(retry){
+    if(!this.ready())return;
+    this.busy=true;renderChip();this.err="";
+    try{
+      const payload=JSON.stringify({v:1,threads:DB.threads,touched:new Date().toISOString(),
+        device:navigator.platform||"device"},null,1);
+      if(payload.length>800000)throw new Error("state.json is getting large — archive some closed threads");
+      const body={message:"loop: "+DB.threads.filter(isLive).length+" open, "+
+        DB.threads.reduce((a,t)=>a+t.log.length,0)+" log lines",content:b64e(payload),branch:this.cfg.branch};
+      if(this.sha)body.sha=this.sha;
+      const r=await fetch(this.url(),{method:"PUT",headers:this.head(),body:JSON.stringify(body)});
+      if(r.status===409||r.status===422){
+        if(retry)throw new Error("Two devices are fighting — hit Sync now and try again");
+        this.busy=false;
+        await this.pull(true);          // union merge, nothing lost
+        return this.push(true);
+      }
+      if(!r.ok){let m=r.status;try{m=(await r.json()).message;}catch(e){}throw new Error("Write failed: "+m);}
+      const d=await r.json();this.sha=d.content&&d.content.sha;this.last=new Date();
+    }catch(e){
+      this.err=e.message;
+      toast(/fetch|network/i.test(e.message)?"No connection — saved on this device, will sync later":e.message);
+    }
+    this.busy=false;renderChip();
+  },
+
+  schedule(){
+    if(!this.ready())return;
+    clearTimeout(this.timer);
+    this.timer=setTimeout(()=>this.push(),3500);
+  },
+  flush(){if(this.ready()&&this.timer){clearTimeout(this.timer);this.timer=null;this.push();}}
+};
+Git.load();
+
+/* ---------- one backend at a time ---------- */
+const Sync={
+  mode:"local",
+  load(){try{this.mode=localStorage.getItem("loop.sync")||(Git.ready()?"github":"local");}catch(e){}
+    if(this.mode==="github"&&!Git.ready())this.mode="local";},
+  set(m){this.mode=m;try{localStorage.setItem("loop.sync",m);}catch(e){}renderChip();}
+};
+Sync.load();
+
+afterSave=()=>{
+  if(Sync.mode==="github")Git.schedule();
+  else if(Sync.mode==="obsidian")Vault.schedule();
+};
+
+function renderChip(){
+  const c=$("#chipVault"),t=$("#chipTxt");if(!c)return;
+  c.className="chip";
+  const hhmm=d=>pad(d.getHours())+":"+pad(d.getMinutes());
+  if(Sync.mode==="github"){
+    if(Git.busy){c.classList.add("busy");t.textContent="syncing";c.title="Talking to GitHub";return;}
+    if(Git.err){c.classList.add("warn");t.textContent="sync issue";c.title=Git.err;return;}
+    c.classList.add("on");t.textContent=Git.cfg.repo||"GitHub";
+    c.title="Private repo "+Git.cfg.owner+"/"+Git.cfg.repo+(Git.last?" · synced "+hhmm(Git.last):"");
+    return;
+  }
+  if(Sync.mode==="obsidian"){
+    if(Vault.busy){c.classList.add("busy");t.textContent="saving";return;}
+    if(Vault.needsGesture){c.classList.add("warn");t.textContent="reconnect";c.title="Click to restore folder access";return;}
+    if(Vault.ready()){c.classList.add("on");t.textContent=Vault.name;
+      c.title="Obsidian "+Vault.name+"/Loop"+(Vault.last?" · saved "+hhmm(Vault.last):"");return;}
+  }
+  t.textContent="this device";c.title="Nothing is syncing — data lives in this browser only";
+}
+Vault.chip=renderChip;
+
+$("#chipVault").onclick=e=>{
+  if(Sync.mode==="obsidian"&&Vault.needsGesture)return Vault.reconnect();
+  menu(e.currentTarget,[
+    {label:"Sync now",fn:async()=>{
+      if(Sync.mode==="github"){await Git.pull();await Git.push();toast("Synced with GitHub");}
+      else if(Sync.mode==="obsidian"){await Vault.pull();await Vault.push(true);toast("Saved to "+Vault.name);}
+      else storageSheet();}},
+    {sep:1},
+    {label:"Where my data lives",fn:storageSheet},
+    {note:Sync.mode==="github"&&Git.last?"last commit "+pad(Git.last.getHours())+":"+pad(Git.last.getMinutes()):"&nbsp;"}]);
+};
+
+/* ---------- pull when you come back to the tab ---------- */
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){Git.flush();return;}
+  if(Sync.mode==="github"&&Git.ready())Git.pull(true);
+});
+addEventListener("online",()=>{if(Sync.mode==="github")Git.push();});
+
+/* ---------- storage sheet ---------- */
+function storageSheet(){
+  const m=Sync.mode;
+  sheet("Where my data lives",`
+    <div class="swatch" style="flex-direction:column;gap:7px">
+      <button class="opt" data-m="github" ${m==="github"?'style="border-color:var(--ochre)"':""}>
+        <span class="ico">${m==="github"?"\u25c9":"\u25cb"}</span><span><b>A private GitHub repo &mdash; laptop and phone</b>
+        <span>${Git.ready()?"Connected to <b>"+esc(Git.cfg.owner)+"/"+esc(Git.cfg.repo)+"</b>. Every save is a commit, so you also get the full history.":"One private repo holds a single state file. Both devices read and write it. Free, and every save is a commit."}</span></span></button>
+      <button class="opt" data-m="obsidian" ${m==="obsidian"?'style="border-color:var(--ochre)"':""}>
+        <span class="ico">${m==="obsidian"?"\u25c9":"\u25cb"}</span><span><b>An Obsidian folder &mdash; this Mac only</b>
+        <span>Markdown notes in a vault folder. Nothing leaves the machine.</span></span></button>
+      <button class="opt" data-m="local" ${m==="local"?'style="border-color:var(--ochre)"':""}>
+        <span class="ico">${m==="local"?"\u25c9":"\u25cb"}</span><span><b>This browser only</b>
+        <span>No sync. Fine for trying things out.</span></span></button>
+    </div>
+    ${m==="github"?`<div class="rowbtns" style="margin-top:14px">
+      <button class="abtn go" id="gSet">${Git.ready()?"Change repo or token":"Set up the repo"}</button>
+      <button class="abtn" id="gSync">Sync now</button>
+      ${Git.ready()?`<button class="abtn" id="gOpen">Open the repo</button>`:""}</div>
+      ${Git.err?`<p class="note" style="border-left-color:var(--rust)"><b>${esc(Git.err)}</b></p>`:""}`:""}
+    ${m==="obsidian"?`<div class="rowbtns" style="margin-top:14px"><button class="abtn go" id="oLink">${Vault.ready()?"Re-link a folder":"Link a vault folder"}</button>
+      ${Vault.ready()?`<button class="abtn" id="oSync">Save now</button><button class="abtn" id="oPhone">Phone capture</button>`:""}</div>`:""}
+    <p class="note">Whatever you pick, this browser keeps its own copy too, so the app works with no connection and catches up later. <b>Nothing is ever deleted</b> \u2014 when two devices disagree, the log lines from both are kept.</p>
+    <div class="rowbtns"><button class="abtn" id="sDl">Download a backup</button><button class="abtn" id="sImp">Restore a backup</button></div>`);
+
+  $("#sheet").querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{
+    const to=b.dataset.m;
+    if(to==="github"&&!Git.ready()){Sync.set("github");return gitSheet();}
+    if(to==="obsidian"&&!Vault.ready()){Sync.set("obsidian");closeSheet();return Vault.connect();}
+    Sync.set(to);storageSheet();
+    if(to==="github")Git.pull(true);
+  });
+  if($("#gSet"))$("#gSet").onclick=gitSheet;
+  if($("#gSync"))$("#gSync").onclick=async()=>{closeSheet();await Git.pull();await Git.push();toast("Synced");};
+  if($("#gOpen"))$("#gOpen").onclick=()=>open2("https://github.com/"+Git.cfg.owner+"/"+Git.cfg.repo+"/commits/"+Git.cfg.branch);
+  if($("#oLink"))$("#oLink").onclick=()=>{closeSheet();Vault.connect();};
+  if($("#oSync"))$("#oSync").onclick=async()=>{closeSheet();await Vault.pull();await Vault.push(true);toast("Saved");};
+  if($("#oPhone"))$("#oPhone").onclick=()=>{closeSheet();phoneSheet();};
+  $("#sDl").onclick=()=>{closeSheet();dlBundle();};
+  $("#sImp").onclick=()=>{
+    const i=document.createElement("input");i.type="file";i.accept=".json";
+    i.onchange=()=>{const f=i.files[0];if(!f)return;const r=new FileReader();
+      r.onload=()=>{try{Vault.merge(JSON.parse(r.result).threads||[]);save();closeSheet();render();toast("Merged");}
+        catch(e){toast("Couldn't read that file");}};
+      r.readAsText(f);};
+    i.click();};
+}
+function open2(u){try{window.open(u,"_blank","noopener");}catch(e){}}
+
+/* ---------- github setup ---------- */
+function gitSheet(){
+  const c=Git.cfg;
+  sheet("Connect the private repo",`
+    <p><b>One-time setup, about two minutes.</b> Do these two things on github.com first:</p>
+    <p><b>1.</b> Create a repo called <b>loop-data</b>. Set it to <b>Private</b> and tick <b>Add a README</b> \u2014 that gives it a branch to write to.
+      <button class="abtn" id="gNew" style="margin-left:6px">Open the new repo page</button></p>
+    <p><b>2.</b> Make a token: Settings \u2192 Developer settings \u2192 Personal access tokens \u2192 <b>Fine-grained tokens</b> \u2192 Generate new.
+      Set <b>Repository access</b> to only <b>loop-data</b>, and under <b>Repository permissions</b> set <b>Contents: Read and write</b>. Nothing else.
+      <button class="abtn" id="gTok" style="margin-left:6px">Open the token page</button></p>
+    <dl class="kv" style="margin-top:16px">
+      <dt>Your username</dt><dd><input class="fld mono" id="gOwner" value="${esc(c.owner)}" placeholder="av-vignesh" autocomplete="off"></dd>
+      <dt>Repo name</dt><dd><input class="fld mono" id="gRepo" value="${esc(c.repo||"loop-data")}" autocomplete="off"></dd>
+      <dt>Token</dt><dd><input class="fld mono" id="gToken" type="password" autocomplete="off" spellcheck="false"
+        placeholder="${c.token?"\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 saved on this device":"github_pat_\u2026"}"></dd>
+    </dl>
+    <p class="note"><b>The token stays on the device you type it on</b> \u2014 in this browser's storage, never in the repo, never in the page.
+      Type it once here and once on your phone. If a phone goes missing, revoke it on github.com and it's dead everywhere.<br><br>
+      Scoped the way described above, the token can read and write <b>only</b> that one repo. It can't touch your other code.</p>
+    <div class="rowbtns"><button class="abtn go" id="gGo">Connect</button>
+      ${c.token?`<button class="abtn" id="gWipe">Forget the token</button>`:""}
+      <span id="gMsg" class="mono" style="font-size:11.5px;color:var(--chalk-4);line-height:28px"></span></div>`);
+  $("#gNew").onclick=()=>open2("https://github.com/new");
+  $("#gTok").onclick=()=>open2("https://github.com/settings/personal-access-tokens/new");
+  if($("#gWipe"))$("#gWipe").onclick=()=>{Git.forget();gitSheet();toast("Token cleared from this device");};
+  $("#gGo").onclick=async()=>{
+    const msg=$("#gMsg");
+    Git.cfg.owner=$("#gOwner").value.trim().replace(/^@/,"");
+    Git.cfg.repo=$("#gRepo").value.trim();
+    const tk=$("#gToken").value.trim();if(tk)Git.cfg.token=tk;
+    if(!Git.ready()){msg.textContent="fill all three";msg.style.color="var(--rust)";return;}
+    Git.store();$("#gToken").value="";
+    msg.innerHTML='<span class="spin"></span>checking';msg.style.color="var(--chalk-4)";
+    try{
+      const full=await Git.check();
+      msg.textContent="\u2713 "+full;msg.style.color="var(--moss)";
+      Sync.set("github");
+      const remote=await Git.read();
+      if(remote&&remote.threads&&remote.threads.length){
+        Vault.merge(remote.threads);save();render();
+        toast("Connected \u2014 pulled "+remote.threads.length+" threads from the repo");
+      }else{
+        await Git.push();
+        toast("Connected \u2014 wrote "+DB.threads.length+" threads to the repo");
+      }
+      setTimeout(()=>{closeSheet();renderChip();},600);
+    }catch(e){msg.textContent="\u2715 "+e.message;msg.style.color="var(--rust)";}
+  };
+}
+
+/* ---------- how to get it onto both devices ---------- */
+function devicesSheet(){
+  const host=location.host||"(not hosted yet)";
+  sheet("Laptop and phone",`
+    <p><b>The app is one file.</b> Put <b>loop.html</b> in any public repo with Pages turned on \u2014 your <b>av-vignesh.github.io</b> repo already qualifies. Commit it and it's live at that repo's Pages URL.</p>
+    <p>The code being public is fine. Your notes are in the <b>separate private repo</b>, and the token that reaches it is typed into each device, never into the file.</p>
+    <p><b>On the laptop:</b> open the Pages URL in Chrome, then <b>\u22ef \u2192 Where my data lives \u2192 private GitHub repo</b> and connect.</p>
+    <p><b>On the phone:</b> open the same URL in Safari, tap Share, <b>Add to Home Screen</b>. It opens fullscreen with no browser bars. Connect it with the same repo and the same token.</p>
+    <p><b>Then it just works.</b> Type an idea on the phone on a Sunday; it's on the laptop on Monday. Switching to a tab pulls automatically, and edits push a few seconds after you stop typing.</p>
+    <p><b>Offline is fine.</b> Everything writes to the device first. When the connection returns it syncs, and because updates only ever get added, nothing is lost if both devices changed things.</p>
+    <p class="note">Serving from ${host==="(not hosted yet)"?"a file":"<b>"+esc(host)+"</b>"} right now. The GitHub API needs a real http(s) origin \u2014 Pages gives you that, and it fixes the AI calls too.</p>`,
+    `<button class="abtn go" data-close>Got it</button>`);
+  $("#sheet").querySelectorAll("[data-close]").forEach(b=>b.onclick=closeSheet);
+}
+
+if(Sync.mode==="github"&&Git.ready())setTimeout(()=>Git.pull(true),300);
+
+render();
+renderChip();
+Vault.boot();
+})();
+</script>
+</body>
+</html>
