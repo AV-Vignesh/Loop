@@ -175,6 +175,32 @@ button{cursor:pointer}
 .aged{font:500 9.5px/1 var(--mono);color:var(--ink4)}
 .aged.warn{color:var(--hot)}
 
+/* ══ density ══ */
+/* compact + dense: one line per thread, and use the width of the screen */
+[data-den="compact"] .tc .mid,[data-den="dense"] .tc .mid{display:flex;align-items:center;gap:9px;min-width:0}
+[data-den="compact"] .tc h3,[data-den="dense"] .tc h3{flex:0 1 auto;min-width:0}
+[data-den="compact"] .tc .meta,[data-den="dense"] .tc .meta{margin-top:0;flex:1 1 auto;min-width:0}
+[data-den="compact"] .tc .last,[data-den="dense"] .tc .last{display:none}
+[data-den="compact"] .tc{padding:7px 11px;border-radius:9px}
+[data-den="compact"] .tc h3{font-size:13.5px}
+[data-den="compact"] .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));gap:6px}
+[data-den="dense"] .tc{padding:4px 9px;border-radius:6px;border-left-width:3px}
+[data-den="dense"] .tc h3{font:400 12.5px/1.5 var(--ui)}
+[data-den="dense"] .tc .rt{flex-direction:row;gap:8px;align-items:baseline}
+[data-den="dense"] .aged{display:none}
+[data-den="dense"] .tag{height:14px;font-size:9px;line-height:14px;padding:0 5px}
+[data-den="dense"] .who{font-size:10.5px}
+[data-den="dense"] .when{font-size:10.5px}
+[data-den="dense"] .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:4px}
+[data-den="dense"] .sh{margin:14px 0 7px}
+[data-den="dense"] .stats,[data-den="compact"] .stats{gap:9px;margin-bottom:14px}
+[data-den="dense"] .st{padding:9px 12px;border-radius:10px}
+[data-den="dense"] .st b{font-size:21px;margin-bottom:3px}
+[data-den="dense"] .st span{font-size:9.5px}
+[data-den="dense"] .wrap{padding:12px 14px 0}
+[data-den="dense"] .col .in{gap:3px;padding:6px}
+[data-den="compact"] .col .in{gap:5px}
+
 /* ══ board ══ */
 .board{display:grid;gap:12px;align-items:start;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));max-width:100%}
 .col{min-width:0}
@@ -383,6 +409,7 @@ input[type=date].inp::-webkit-calendar-picker-indicator{filter:invert(.6);cursor
 /* ══ mobile ══ */
 @media (max-width:860px){
   :root{--top:52px;--tabs:58px}
+  [data-den="compact"] .list,[data-den="dense"] .list{grid-template-columns:1fr}
   .wrap{padding:14px 14px 0}
   .pills{display:none}
   .stats{grid-template-columns:1fr 1fr;gap:9px}
@@ -426,6 +453,7 @@ input[type=date].inp::-webkit-calendar-picker-indicator{filter:invert(.6);cursor
     <div class="pills" id="pills"></div>
     <div class="sp"></div>
     <button class="chip" id="chip"><i></i><span id="chipT">local</span></button>
+    <button class="ico" id="bDen" title="Density (d)">▤</button>
     <button class="ico" id="bSearch" title="Search ⌘K">⌕</button>
     <button class="ico" id="bAI" title="AI" style="font:700 12px/1 var(--mono)">AI</button>
     <button class="ico" id="bMore" title="More">⋯</button>
@@ -1071,9 +1099,13 @@ function lookSheet(){
     <div class="swatches">${Object.keys(THEMES).map(k=>{const[n,a,b,c,d]=THEMES[k];
       return `<button class="sw" data-t="${k}" aria-pressed="${cur===k}"><b>${n}</b>
         <span class="s"><i style="background:${a}"></i><i style="background:${b}"></i><i style="background:${c}"></i><i style="background:${d}"></i></span></button>`;}).join("")}</div>
+    <p style="font:600 10px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink4);margin:18px 0 8px">Density</p>
+    <div class="row" id="denRow">${DENS.map(([k,l])=>`<button class="btn ${document.documentElement.dataset.den===k?"p":""}" data-d="${k}">${l.split(" — ")[0]}</button>`).join("")}</div>
+    <p class="hintp">${DENS.find(d=>d[0]===document.documentElement.dataset.den)[1]}</p>
     <button class="opt" id="thSys"><span class="i">◑</span><span><b>Match the system</b><span>Light by day, dark by night.</span></span></button>
     <p class="hintp">Press <b>t</b> anywhere to cycle.</p>`);
   $("#sheet").querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{theme(b.dataset.t);lookSheet();});
+  $("#sheet").querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{density(b.dataset.d);lookSheet();});
   $("#thSys").onclick=()=>{theme("system");closeSheet();};
 }
 
@@ -1535,6 +1567,19 @@ $("#bMore").onclick=e=>menu(e.currentTarget,[
   {label:"Replace everything from a file",fn:()=>{storageSheet();setTimeout(()=>$("#sImp").click(),120);}},
   {label:"How this works",fn:helpSheet}]);
 
+/* ══ density ══ */
+const DENS=[["comfortable","Comfortable — two lines, full context"],
+            ["compact","Compact — one line, two columns"],
+            ["dense","Dense — one line, three columns, ~50 on screen"]];
+function density(n,q){
+  if(!DENS.some(d=>d[0]===n))n="compact";
+  document.documentElement.dataset.den=n;LS.set("loop.den",n);
+  if(!q)toast(DENS.find(d=>d[0]===n)[1].split(" — ")[0]);
+}
+density(LS.get("loop.den","compact"),true);
+$("#bDen").onclick=e=>menu(e.currentTarget,DENS.map(([k,l])=>({label:(document.documentElement.dataset.den===k?"● ":"○ ")+l,
+  fn:()=>density(k)})).concat([{note:"press d to cycle"}]));
+
 /* ══ capture ══ */
 const cap=$("#cap");
 const fire=()=>{const t=create(cap.value);
@@ -1558,6 +1603,7 @@ document.addEventListener("keydown",e=>{
   if(typing)return;
   if(e.key==="c"){e.preventDefault();$("#dock").classList.add("show");cap.focus();}
   if(e.key==="/"){e.preventDefault();Pal.open();}
+  if(e.key==="d"){const k=DENS.map(x=>x[0]),i=k.indexOf(document.documentElement.dataset.den);density(k[(i+1)%k.length]);}
   if(e.key==="t"){const k=Object.keys(THEMES),i=k.indexOf(document.documentElement.dataset.theme);theme(k[(i+1)%k.length]);}
   const n={"1":"today","2":"board","3":"gantt","4":"done"}[e.key];
   if(n)go(n);
